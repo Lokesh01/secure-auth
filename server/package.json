@@ -3,9 +3,18 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "imports": {
+    "#src/*": "./dist/*",
+    "#config/*": "./dist/config/*",
+    "#database/*": "./dist/database/*",
+    "#common/*": "./dist/common/*",
+    "#modules/*": "./dist/modules/*",
+    "#middlewares/*": "./dist/middlewares/*",
+    "#mailers/*": "./dist/mailers/*"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev --files src/index.ts",
+    "dev": "ts-node-dev -r tsconfig-paths/register --files src/index.ts",
     "build": "tsc && cp ./package.json ./dist",
     "start": "node dist/index.js"
   },
@@ -41,6 +50,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/speakeasy": "^2.0.10",
     "ts-node-dev": "^2.0.0",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.3"
   }
 }
