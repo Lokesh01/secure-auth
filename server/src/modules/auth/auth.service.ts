@@ -2,6 +2,9 @@ import { RegisteredDto } from '#common/interface/auth.interface';
 import userModel from '#database/models/user.model';
 import { BadRequestException } from '#common/utils/catch-errors';
 import { ErrorCode } from '#common/enums/error-codes.enum';
+import VerificationCodeModel from '#database/models/verification.model';
+import { VerificationEnum } from '#common/enums/verification.enums';
+import { fortyFiveMinutesFromNow } from '#common/utils/date-time';
 
 export class AuthService {
   public async register(registerData: RegisteredDto) {
@@ -24,10 +27,11 @@ export class AuthService {
 
     const userId = newUser._id;
 
-    // const verification = await VerificationCodeModel.create({
-    //   userId,
-    //   type: VerificationEnum.EMAIL_VERIFICATION,
-    // });
+    const verification = await VerificationCodeModel.create({
+      userId,
+      type: VerificationEnum.EMAIL_VERIFICATION,
+      expiresAt: fortyFiveMinutesFromNow(),
+    });
 
     return {
       user: newUser,
