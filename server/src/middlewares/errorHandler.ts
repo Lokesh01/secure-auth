@@ -1,5 +1,18 @@
-import { ErrorRequestHandler } from 'express';
+import { ErrorRequestHandler, Response } from 'express';
 import { AppError } from '#common/utils/AppError';
+import { z } from 'zod';
+import { HTTP_STATUS } from '#config/http.config';
+
+const formatZodError = (res: Response, error: z.ZodError) => {
+  const errors = error.issues.map(err => ({
+    field: err.path.join('.'),
+    message: err.message,
+  }));
+  res.status(HTTP_STATUS.BAD_REQUEST).json({
+    message: 'Validation Error',
+    errors,
+  });
+};
 
 export const errorHandler: ErrorRequestHandler = (
   error: Error | unknown,
@@ -23,6 +36,10 @@ export const errorHandler: ErrorRequestHandler = (
       errorCode: error.errorCode,
     });
     return;
+  }
+
+  if (error instanceof z.ZodError) {
+    return formatZodError(res, error);
   }
 
   const errorMessage =
