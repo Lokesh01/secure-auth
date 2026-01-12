@@ -60,7 +60,7 @@ export class AuthService {
     });
 
     if (!user) {
-      // logger.warn(`Login failed: User with email ${email} not found`);
+      logger.warn(`Login failed: User with email ${email} not found`);
       throw new BadRequestException(
         'Invalid email or password',
         ErrorCode.AUTH_USER_NOT_FOUND
@@ -70,7 +70,7 @@ export class AuthService {
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      // logger.warn(`Login failed: Invalid password for email ${email}`);
+      logger.warn(`Login failed: Invalid password for email ${email}`);
       throw new BadRequestException(
         'Invalid email or password',
         ErrorCode.AUTH_USER_NOT_FOUND
@@ -79,7 +79,7 @@ export class AuthService {
 
     // Check if the user enable 2fa retuen user= null
     if (user.userPreferences.enable2FA) {
-      // logger.info(`2FA required for user ID: ${user._id}`);
+      logger.info(`2FA required for user ID: ${user._id}`);
       return {
         user: null,
         mfarequired: true,
