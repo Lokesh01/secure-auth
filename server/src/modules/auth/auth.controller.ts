@@ -3,7 +3,12 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { loginSchema, registerSchema } from '#common/validators/auth.validator';
 import { HTTP_STATUS } from '#config/http.config';
-import { setAuthenticationCookies } from '../../common/utils/cookies';
+import {
+  getAccessTokenCookieOptions,
+  getRefreshTokenCookieOptions,
+  setAuthenticationCookies,
+} from '#common/utils/cookies';
+import { UnauthorizedException } from '#common/utils/catch-errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -55,6 +60,32 @@ export class AuthController {
           user,
           mfaRequired,
         });
+    }
+  );
+
+  public refreshToken = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const refreshToken = req.cookies['refreshToken'] as string | undefined;
+
+      if (!refreshToken) {
+        throw new UnauthorizedException('Refresh token missing');
+      }
+
+      const { accessToken, newRefreshToken } =
+        await this.authService.refreshToken(refreshToken);
+
+      if (newRefreshToken) {
+        res.cookie(
+          'refreshToken',
+          newRefreshToken,
+          getRefreshTokenCookieOptions()
+        );
+      }
+
+      return res
+        .status(HTTP_STATUS.OK)
+        .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
+        .json({ message: 'Refresh access token successful' });
     }
   );
 }

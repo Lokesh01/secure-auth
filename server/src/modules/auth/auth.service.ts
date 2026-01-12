@@ -1,10 +1,23 @@
 import { LoginDto, RegisteredDto } from '#common/interface/auth.interface';
 import userModel from '#database/models/user.model';
-import { BadRequestException } from '#common/utils/catch-errors';
+import {
+  BadRequestException,
+  UnauthorizedException,
+} from '#common/utils/catch-errors';
 import { ErrorCode } from '#common/enums/error-codes.enum';
 import sessionModel from '#database/models/session.model';
-import { refreshTokenSignOptions, signJwtToken } from '#common/utils/jwt';
+import {
+  refreshTokenSignOptions,
+  RefreshTPayload,
+  signJwtToken,
+  verifyJwtToken,
+} from '#common/utils/jwt';
 import { logger } from '#common/utils/logger';
+import {
+  calculateExpirationDate,
+  ONE_DAY_IN_MS,
+} from '#common/utils/date-time';
+import { config } from '../../config/app.config';
 // import VerificationCodeModel from '#database/models/verification.model';
 // import { VerificationEnum } from '#common/enums/verification.enums';
 // import { fortyFiveMinutesFromNow } from '#common/utils/date-time';
@@ -111,6 +124,62 @@ export class AuthService {
       accessToken,
       refreshToken,
       mfaRequired: false,
+    };
+  }
+
+  public async refreshToken(refreshToken: string) {
+    const { payload } = verifyJwtToken<RefreshTPayload>(refreshToken, {
+      secret: refreshTokenSignOptions.secret,
+    });
+
+    if (!payload) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const session = await sessionModel.findById(payload.sessionId);
+    const now = Date.now();
+
+    if (!session) {
+      throw new UnauthorizedException('Session does not exist');
+    }
+
+    //already expired need to login again
+    if (session.expiredAt.getTime() <= now) {
+      throw new UnauthorizedException('Session expired');
+    }
+
+    const sessionRequireRefresh =
+      session.expiredAt.getTime() - now <= ONE_DAY_IN_MS;
+
+    if (sessionRequireRefresh) {
+      session.expiredAt = calculateExpirationDate(
+        config.JWT.REFRESH_EXPIRES_IN
+      );
+      await session.save();
+    }
+
+    //rotate token on every refresh
+    const newRefreshToken = sessionRequireRefresh
+      ? signJwtToken(
+          {
+            sessionId: session._id,
+          },
+          refreshTokenSignOptions
+        )
+      : undefined;
+
+    const accessToken = signJwtToken({
+      userId: session.userId,
+      sessionId: session._id,
+    });
+
+    logger.info(
+      `Refresh token successful, new access token and refresh token issued for session ID: ${session._id}`
+    );
+
+    return {
+      accessToken,
+      newRefreshToken,
     };
   }
 }
