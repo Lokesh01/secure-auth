@@ -1,7 +1,11 @@
 import { asyncHandler } from '#middlewares/asyncHandler';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { loginSchema, registerSchema } from '#common/validators/auth.validator';
+import {
+  loginSchema,
+  registerSchema,
+  verificationEmailSchema,
+} from '#common/validators/auth.validator';
 import { HTTP_STATUS } from '#config/http.config';
 import {
   getAccessTokenCookieOptions,
@@ -86,6 +90,17 @@ export class AuthController {
         .status(HTTP_STATUS.OK)
         .cookie('accessToken', accessToken, getAccessTokenCookieOptions())
         .json({ message: 'Refresh access token successful' });
+    }
+  );
+
+  public verifyEmail = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const { code } = verificationEmailSchema.parse(req.body);
+      await this.authService.verifyEmail(code);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: 'Email verified successfully',
+      });
     }
   );
 }

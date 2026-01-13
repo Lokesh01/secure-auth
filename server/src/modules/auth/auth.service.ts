@@ -15,12 +15,14 @@ import {
 import { logger } from '#common/utils/logger';
 import {
   calculateExpirationDate,
+  fortyFiveMinutesFromNow,
   ONE_DAY_IN_MS,
 } from '#common/utils/date-time';
-import { config } from '../../config/app.config';
-// import VerificationCodeModel from '#database/models/verification.model';
-// import { VerificationEnum } from '#common/enums/verification.enums';
-// import { fortyFiveMinutesFromNow } from '#common/utils/date-time';
+import { config } from '#config/app.config';
+import VerificationCodeModel from '#database/models/verification.model';
+import { VerificationEnum } from '#common/enums/verification.enums';
+import { sendEmail } from '#mailers/mailer';
+import { verifyEmailTemplate } from '#mailers/templates/template';
 
 export class AuthService {
   public async register(registerData: RegisteredDto) {
@@ -47,13 +49,21 @@ export class AuthService {
       password,
     });
 
-    // const userId = newUser._id;
+    const userId = newUser._id;
 
-    // const verification = await VerificationCodeModel.create({
-    //   userId,
-    //   type: VerificationEnum.EMAIL_VERIFICATION,
-    //   expiresAt: fortyFiveMinutesFromNow(),
-    // });
+    const verification = await VerificationCodeModel.create({
+      userId,
+      type: VerificationEnum.EMAIL_VERIFICATION,
+      expiresAt: fortyFiveMinutesFromNow(),
+    });
+
+    //sending verification email link
+    const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
+    await sendEmail({
+      to: newUser.email,
+      ...verifyEmailTemplate(verificationUrl),
+    });
+
     logger.info(
       `User registered successfully: ${email}, User ID: ${newUser._id}`
     );
@@ -180,6 +190,39 @@ export class AuthService {
     return {
       accessToken,
       newRefreshToken,
+    };
+  }
+
+  public async verifyEmail(code: string) {
+    const validCode = await VerificationCodeModel.findOne({
+      code,
+      type: VerificationEnum.EMAIL_VERIFICATION,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!validCode) {
+      throw new BadRequestException('Invalid or expired verification code');
+    }
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      validCode.userId,
+      { isEmailVerified: true },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      throw new BadRequestException(
+        'Unable to verify email address',
+        ErrorCode.VALIDATION_ERROR
+      );
+    }
+
+    await validCode.deleteOne();
+
+    logger.info(`Email verified for user ID: ${updatedUser._id}`);
+
+    return {
+      user: updatedUser,
     };
   }
 }
