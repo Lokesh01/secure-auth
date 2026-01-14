@@ -2,6 +2,7 @@ import { asyncHandler } from '#middlewares/asyncHandler';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import {
+  emailSchema,
   loginSchema,
   registerSchema,
   verificationEmailSchema,
@@ -100,6 +101,17 @@ export class AuthController {
 
       return res.status(HTTP_STATUS.OK).json({
         message: 'Email verified successfully',
+      });
+    }
+  );
+
+  public forgotPassword = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const email = emailSchema.parse(req.body.email);
+      await this.authService.forgotPassword(email);
+
+      return res.status(HTTP_STATUS.OK).json({
+        message: 'Password reset email sent successfully',
       });
     }
   );

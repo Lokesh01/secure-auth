@@ -19,22 +19,13 @@ export const sendEmail = async ({
   to,
   from = mailer_sender,
   subject,
-  html,
   text,
-}: Params) => {
-  try {
-    await resend.emails.send({
-      from,
-      to: Array.isArray(to) ? to : [to],
-      subject,
-      html,
-      text,
-    });
-    logger.info(`Verification email successfully sent to ${to}`);
-  } catch (error) {
-    console.error(
-      'Error sending email:',
-      error instanceof Error ? error.message : error
-    );
-  }
-};
+  html,
+}: Params) =>
+  await resend.emails.send({
+    from,
+    to: Array.isArray(to) ? to : [to],
+    text,
+    subject,
+    html,
+  });
