@@ -1,4 +1,8 @@
-import { LoginDto, RegisteredDto } from '#common/interface/auth.interface';
+import {
+  LoginDto,
+  RegisteredDto,
+  resetPasswordDto,
+} from '#common/interface/auth.interface';
 import userModel from '#database/models/user.model';
 import {
   BadRequestException,
@@ -31,7 +35,8 @@ import {
   passwordResetTemplate,
   verifyEmailTemplate,
 } from '#mailers/templates/template';
-import { HTTP_STATUS } from '../../config/http.config';
+import { HTTP_STATUS } from '#config/http.config';
+import { hashValue } from '#common/utils/bcrypt';
 
 export class AuthService {
   public async register(registerData: RegisteredDto) {
@@ -285,6 +290,36 @@ export class AuthService {
     return {
       url: resetLink,
       emailId: data.id,
+    };
+  }
+
+  public async resetPassword({ password, verificationCode }: resetPasswordDto) {
+    const validCode = await VerificationCodeModel.findOne({
+      code: verificationCode,
+      type: VerificationEnum.PASSWORD_RESET,
+      expiresAt: { $gt: new Date() },
+    });
+
+    if (!validCode) {
+      throw new NotFoundException('Invalid or expired verification code');
+    }
+
+    const hashedPassword = await hashValue(password);
+
+    const updatedUser = await userModel.findByIdAndUpdate(validCode.userId, {
+      password: hashedPassword,
+    });
+
+    if (!updatedUser) {
+      throw new BadRequestException('Unable to update password');
+    }
+
+    await validCode.deleteOne();
+
+    await sessionModel.deleteMany({ userId: updatedUser._id });
+
+    return {
+      user: updatedUser,
     };
   }
 }

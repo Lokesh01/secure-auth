@@ -1,5 +1,4 @@
 import { config } from '#config/app.config';
-import { logger } from '../common/utils/logger';
 import { resend } from './resendClient';
 
 type Params = {
