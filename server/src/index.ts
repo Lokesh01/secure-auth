@@ -6,6 +6,7 @@ import { config } from '#config/app.config';
 import connectDB from './database/database';
 import { errorHandler } from '#middlewares/errorHandler';
 import { asyncHandler } from '#middlewares/asyncHandler';
+import passport from '#middlewares/passport';
 import { HTTP_STATUS } from '#config/http.config';
 
 //routes imports
@@ -19,6 +20,7 @@ app.use(express.json());
 app.use(urlencoded({ extended: true }));
 app.use(cors({ origin: config.APP_ORIGIN, credentials: true }));
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.get(
   '/',
