@@ -15,7 +15,10 @@ import {
   getRefreshTokenCookieOptions,
   setAuthenticationCookies,
 } from '#common/utils/cookies';
-import { UnauthorizedException } from '#common/utils/catch-errors';
+import {
+  NotFoundException,
+  UnauthorizedException,
+} from '#common/utils/catch-errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -126,6 +129,22 @@ export class AuthController {
 
       return clearAuthenticationCookies(res).status(HTTP_STATUS.OK).json({
         message: 'Reset Password successfully',
+      });
+    }
+  );
+
+  public logout = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const sessionId = req.sessionId; //coming from passport jwt strategy
+
+      if (!sessionId) {
+        throw new NotFoundException('session is invalid');
+      }
+
+      await this.authService.logout(sessionId);
+
+      return clearAuthenticationCookies(res).status(HTTP_STATUS.OK).json({
+        message: 'Logout successful',
       });
     }
   );
