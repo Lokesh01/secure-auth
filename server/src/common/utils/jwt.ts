@@ -21,7 +21,7 @@ type SignOptsAndSecret = SignOptions & {
  * Note: SignOptions accepts audience as string[] (simple array)
  */
 const signDefaults: SignOptions = {
-  audience: ['user'] as [string], // Cast to tuple for type safety
+  audience: [config.JWT.AUDIENCE] as [string], // Cast to tuple for type safety
 };
 
 /**
@@ -32,7 +32,7 @@ const signDefaults: SignOptions = {
  */
 const verifyDefaults: VerifyOptions = {
   // Tuple syntax: [first required element, ...optional rest elements]
-  audience: ['user'] as [string | RegExp, ...(string | RegExp)[]],
+  audience: [config.JWT.AUDIENCE] as [string | RegExp, ...(string | RegExp)[]],
 };
 
 export const accessTokenSignOptions: SignOptsAndSecret = {

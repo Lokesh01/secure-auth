@@ -19,6 +19,7 @@ const appConfig = () => ({
     EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m') as StringValue,
     REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET'),
     REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '30d') as StringValue,
+    AUDIENCE: getEnv('JWT_AUDIENCE', 'user'),
   },
   MAILER_SENDER: getEnv('MAILER_SENDER'),
   RESEND_API_KEY: getEnv('RESEND_API_KEY'),

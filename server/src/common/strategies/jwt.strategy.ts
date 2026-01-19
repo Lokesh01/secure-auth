@@ -18,6 +18,7 @@ const options: StrategyOptionsWithRequest = {
   jwtFromRequest: ExtractJwt.fromExtractors([
     req => {
       const accessToken = req.cookies.accessToken;
+
       if (!accessToken) {
         throw new UnauthorizedException(
           'Unauthorized access token',
@@ -30,7 +31,7 @@ const options: StrategyOptionsWithRequest = {
   ]),
 
   secretOrKey: config.JWT.SECRET,
-  audience: ['users'],
+  audience: [config.JWT.AUDIENCE],
   algorithms: ['HS256'],
   passReqToCallback: true,
 };
@@ -40,12 +41,14 @@ export const setupJwtStrategy = (passport: PassportStatic) => {
     new JwtStrategy(options, async (req, payload: JwtPayload, done) => {
       try {
         const user = await userService.findUserById(payload.userId);
+
         if (!user) {
           return done(null, false);
         }
         req.sessionId = payload.sessionId;
         return done(null, user);
       } catch (error) {
+        console.error('JWT Strategy Error:', error);
         return done(error, false);
       }
     })
