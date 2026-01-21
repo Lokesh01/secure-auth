@@ -2,6 +2,10 @@ import { ErrorRequestHandler, Response } from 'express';
 import { AppError } from '#common/utils/AppError';
 import { z } from 'zod';
 import { HTTP_STATUS } from '#config/http.config';
+import {
+  clearAuthenticationCookies,
+  REFRESH_PATH,
+} from '#common/utils/cookies';
 
 const formatZodError = (res: Response, error: z.ZodError) => {
   const errors = error.issues.map(err => ({
@@ -21,6 +25,10 @@ export const errorHandler: ErrorRequestHandler = (
   _next
 ): void => {
   console.error(`Error occurred on PATH: ${req.path}`, error);
+
+  if (req.path === REFRESH_PATH) {
+    clearAuthenticationCookies(res);
+  }
 
   if (error instanceof SyntaxError) {
     res.status(400).json({
@@ -45,7 +53,7 @@ export const errorHandler: ErrorRequestHandler = (
   const errorMessage =
     error instanceof Error ? error.message : 'An unexpected error occurred';
 
-  res.status(500).json({
+  res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
     message: 'Internal Server Error',
     error: errorMessage,
   });

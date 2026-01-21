@@ -118,7 +118,7 @@ export class AuthService {
       );
     }
 
-    // Check if the user enable 2fa retuen user= null
+    // Check if the user enable 2fa return user= null
     if (user.userPreferences.enable2FA) {
       logger.info(`2FA required for user ID: ${user._id}`);
       return {
@@ -129,7 +129,7 @@ export class AuthService {
       };
     }
 
-    logger.info(`Creatning session for user ID: ${user._id}`);
+    logger.info(`Creating session for user ID: ${user._id}`);
     const session = await sessionModel.create({
       userId: user._id,
       userAgent,
