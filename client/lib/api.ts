@@ -46,7 +46,7 @@ type SessionType = {
 
 type SessionResponseType = {
   message: string;
-  sessions: sessionType[];
+  sessions: SessionType[];
 };
 
 export type MfaType = {
