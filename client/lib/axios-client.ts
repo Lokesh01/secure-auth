@@ -16,6 +16,13 @@ API.interceptors.response.use(
     return response;
   },
   async error => {
+    if (!error.response) {
+      console.error('Network error or no response received:', error.message);
+      return Promise.reject({
+        message: 'Network error. Please check your connection.',
+        errorCode: 'NETWORK_ERROR',
+      });
+    }
     const { data, status } = error.response;
     // console.log(data, 'data');
 
