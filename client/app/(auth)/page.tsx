@@ -73,10 +73,10 @@ export default function Login() {
       <div className="w-full h-full p-5 rounded-md">
         <Logo />
 
-        <h1 className="text-xl tracking-[-0.16px] dark:text-[#fcfdffef] font-bold mb-1.5 mt-8 text-center sm:text-left">
+        <h1 className="text-xl tracking-[-0.16px] dark:text-[#fcfdffef] font-bold mb-1.5 mt-8 text-center">
           Log in to Secure-Auth
         </h1>
-        <p className="mb-8 text-center sm:text-left text-base dark:text-[#f1f7feb5] font-normal">
+        <p className="mb-8 text-center text-base dark:text-[#f1f7feb5] font-normal">
           Don't have an account?{' '}
           <Link className="text-primary" href="/signup">
             Sign up
