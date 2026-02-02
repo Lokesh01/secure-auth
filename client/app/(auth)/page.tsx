@@ -120,6 +120,7 @@ export default function Login() {
                         placeholder="********"
                         {...field}
                         disabled={isPending}
+                        autoComplete="off"
                       />
                     </FormControl>
                     <FormMessage />
