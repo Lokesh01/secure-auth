@@ -12,7 +12,7 @@ const publicRoutes = [
 
 export default async function authMiddleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
-  const accessToken = req.cookies.get('acessToken')?.value;
+  const accessToken = req.cookies.get('accessToken')?.value;
 
   const isProtectedRoute = protectedRoutes.includes(pathname);
   const isPublicRoute = publicRoutes.includes(pathname);
