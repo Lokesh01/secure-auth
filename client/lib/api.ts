@@ -85,10 +85,7 @@ export const verifyMfaMutationFn = async (data: VerifyMFAType) =>
 
 export const revokeMfaMutationFn = async () => await API.put('/mfa/revoke', {});
 
-export const getUserSessionQueryFn = async () => {
-  await API.get('/session/');
-};
-
+export const getUserSessionQueryFn = async () => await API.get('/session/');
 export const sessionQueryFn = async () => {
   const response = await API.get<SessionResponseType>('/session/all');
   return response.data;
