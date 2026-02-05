@@ -38,11 +38,11 @@ import {
 import { Avatar } from '@/components/ui/avatar';
 import { AvatarFallback } from '@radix-ui/react-avatar';
 import LogoutDialog from './_common/LogoutDialog';
+import { useAuthContext } from '@/context/auth-provider';
 
 const Asidebar = () => {
   const { theme, setTheme } = useTheme();
-  // const { isLoading, user } = useAuthContext();
-  const isLoading = true;
+  const { isLoading, user } = useAuthContext();
   const [isOpen, setIsOpen] = useState(false);
   const { open } = useSidebar();
   const items: {
@@ -112,7 +112,7 @@ const Asidebar = () => {
         <SidebarFooter className="dark:bg-background">
           <SidebarMenu>
             <SidebarMenuItem>
-              {!isLoading ? (
+              {isLoading ? (
                 <Loader
                   size="24px"
                   className="place-self-center self-center animate-spin"
@@ -126,18 +126,15 @@ const Asidebar = () => {
                     >
                       <Avatar className="h-8 w-8 rounded-lg">
                         <AvatarFallback className="rounded-lg">
-                          {/* {user?.name?.split(' ')?.[0]?.charAt(0)}
-                          {user?.name?.split(' ')?.[0]?.charAt(0)} */}
-                          {'LN'}
+                          {user?.name?.split(' ')?.[0]?.charAt(0)}
+                          {user?.name?.split(' ')?.[1]?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="grid flex-1 text-left text-sm leading-tight">
                         <span className="truncate font-semibold">
-                          {'Lokesh Negi'}
+                          {user?.name}
                         </span>
-                        <span className="truncate text-xs">
-                          {'abc@gmail.com'}
-                        </span>
+                        <span className="truncate text-xs">{user?.email}</span>
                       </div>
                       <EllipsisIcon className="ml-auto size-4" />
                     </SidebarMenuButton>
