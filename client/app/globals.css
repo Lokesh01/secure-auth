@@ -7,6 +7,16 @@ body {
   height: 100%;
 }
 
+.steps-gradient {
+  background: linear-gradient(
+    180deg,
+    transparent 0,
+    #00002f26 10%,
+    #00002f26 90%,
+    transparent 100%
+  );
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
