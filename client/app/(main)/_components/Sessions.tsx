@@ -28,7 +28,7 @@ const Sessions = () => {
         refetch();
         toast({ title: 'Success', description: 'Session removed successfuly' });
       },
-      onError: () => {
+      onError: error => {
         toast({
           title: 'Error',
           description:
@@ -41,7 +41,7 @@ const Sessions = () => {
   return (
     <div className="via-root to-root rounded-xl bg-gradient-to-r p-0.5">
       <div className="rounded-[10px] p-6">
-        <h3 className="text-xl tracking-[-0.16px] text-slate-50 font-bold mb-1">
+        <h3 className="text-xl tracking-[-0.16px] text-slate-12 font-bold mb-1">
           Sessions
         </h3>
         <p className="mb-6 max-w-xl text-sm text-[#0007149f] dark:text-gray-100 font-normal">
