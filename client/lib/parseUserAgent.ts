@@ -16,7 +16,7 @@ export const parseUserAgent = (
 ): AgentType => {
   const parser = new UAParser(userAgent);
   const result = parser.getResult();
-  console.log('agent info: ', result);
+  // console.log('agent info: ', result);
 
   const deviceType = result.device.type || 'Desktop';
   const os = `${result.os.name} ${result.os.version}`;
