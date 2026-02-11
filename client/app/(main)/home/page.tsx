@@ -1,6 +1,5 @@
 import React from 'react';
 import EnableMFA from '../_components/EnableMFA';
-import { Session } from 'inspector/promises';
 import Sessions from '../_components/Sessions';
 
 const Home = () => {
@@ -11,7 +10,7 @@ const Home = () => {
           Setup security and sessions
         </h1>
         <p className="text-sm text-[#0007149f] dark:text-gray-100 font-normal">
-          Follow the steps to activate using the Squeezy.
+          Follow the steps to activate using the SecureAuth.
         </p>
       </div>
 
