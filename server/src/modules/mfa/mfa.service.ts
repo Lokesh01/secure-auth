@@ -96,7 +96,7 @@ export class MfaService {
 
     if (!user.userPreferences.enable2FA) {
       return {
-        message: 'MFA is not disabled',
+        message: 'MFA is not enabled',
         userPreferences: {
           enable2FA: user.userPreferences.enable2FA,
         },
@@ -106,9 +106,6 @@ export class MfaService {
     user.userPreferences.twoFactorSecret = undefined;
     user.userPreferences.enable2FA = false;
     await user.save();
-
-    //delete all sessions user will be logged out from all devices
-    await sessionModel.deleteMany({ userId: user._id });
 
     return {
       message: 'MFA revoked successfully',
