@@ -16,7 +16,6 @@ const SessionItem = ({
   loading,
   userAgent,
   date,
-  expiresAt,
   isCurrent = false,
   onRemove,
 }: PropsType) => {
