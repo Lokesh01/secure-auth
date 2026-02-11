@@ -123,7 +123,7 @@ export class AuthService {
       logger.info(`2FA required for user ID: ${user._id}`);
       return {
         user: null,
-        mfarequired: true,
+        mfaRequired: true,
         accessToken: '',
         refreshToken: '',
       };
