@@ -45,9 +45,9 @@ const Sessions = () => {
           Sessions
         </h3>
         <p className="mb-6 max-w-xl text-sm text-[#0007149f] dark:text-gray-100 font-normal">
-          Sessions are the devices you are using or that have used your Secure
-          Auth account. These are the sessions where your account is currently
-          logged in. You can log out of each session.
+          Sessions are the devices you are using or that have used your
+          SecureAuth account. These are the sessions where your account is
+          currently logged in. You can log out of each session.
         </p>
         {isLoading ? (
           <Loader className="animate-spin" size="35px" />
