@@ -128,4 +128,4 @@ npm run format            # Format all files
 npm run format:check      # Check formatting
 ```
 
-Made with ❤️ by [Your Name](https://github.com/Lokesh01)
+Made with ❤️ by [Lokesh Negi](https://github.com/Lokesh01)
