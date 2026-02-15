@@ -1,36 +1,137 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Secure Auth - Client
 
-## Getting Started
+The frontend application for Secure Auth, built with Next.js 14 and modern React patterns.
 
-First, run the development server:
+## 🛠️ Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+### Core
+- **Next.js 14** - React framework with App Router
+- **React 18** - UI library
+- **TypeScript** - Type-safe JavaScript
+
+### Styling
+- **TailwindCSS** - Utility-first CSS framework
+- **tailwindcss-animate** - Animation utilities
+- **class-variance-authority** - Component variant management
+- **clsx & tailwind-merge** - Conditional class utilities
+
+### UI Components
+- **Radix UI** - Headless, accessible UI primitives
+  - Dialog, Dropdown Menu, Toast, Tooltip, Avatar, Label, Separator
+- **Lucide React** - Beautiful icons
+- **input-otp** - OTP input component for MFA
+
+### State & Data
+- **TanStack React Query** - Server state management
+- **React Hook Form** - Form handling
+- **Zod** - Schema validation
+- **Axios** - HTTP client
+
+### Utilities
+- **date-fns** - Date manipulation
+- **ua-parser-js** - User agent parsing for session info
+- **next-themes** - Dark mode support
+
+## 📁 Project Structure
+
+```
+client/
+├── app/
+│   ├── (auth)/                    # Auth pages (public)
+│   │   ├── page.tsx               # Login page
+│   │   ├── signup/                # Registration
+│   │   ├── confirm-account/       # Email verification
+│   │   ├── forgot-password/       # Password reset request
+│   │   ├── reset-password/        # Password reset form
+│   │   └── verify-mfa/            # MFA verification during login
+│   ├── (main)/                    # Protected pages
+│   │   ├── home/                  # Dashboard
+│   │   ├── sessions/              # Session management
+│   │   └── _components/           # Shared components
+│   │       ├── Asidebar.tsx       # Sidebar navigation
+│   │       ├── EnableMFA.tsx      # MFA setup component
+│   │       ├── Sessions.tsx       # Sessions list
+│   │       └── _common/           # Common components
+│   ├── layout.tsx                 # Root layout
+│   └── globals.css                # Global styles
+├── components/                    # Shared UI components
+│   └── ui/                        # shadcn/ui components
+├── context/                       # React contexts
+├── hooks/                         # Custom hooks
+├── lib/                           # Utility functions
+├── middleware.ts                  # Next.js middleware (auth protection)
+└── package.json
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ✨ Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Authentication
+- User registration with email verification
+- Login with email/password
+- JWT-based authentication with HTTP-only cookies
+- Automatic token refresh
+- Protected routes via middleware
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Two-Factor Authentication
+- TOTP-based 2FA setup
+- QR code generation for authenticator apps
+- 6-digit code verification
+- Enable/disable MFA from dashboard
 
-## Learn More
+### Session Management
+- View all active sessions
+- Session details (device, browser, location)
+- Current session indicator
+- Revoke individual sessions
 
-To learn more about Next.js, take a look at the following resources:
+### User Experience
+- Responsive design
+- Dark mode support
+- Toast notifications
+- Form validation with helpful error messages
+- Loading states
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚀 Getting Started
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Prerequisites
+- Node.js 21.0.0
+- Backend server running
 
-## Deploy on Vercel
+### Installation
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **Configure environment**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Update `.env`:
+   ```env
+   NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+   ```
+
+3. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open browser**
+   Navigate to http://localhost:3000
+
+## 📜 Available Scripts
+
+```bash
+npm run dev      # Start development server
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+## 🔗 Related
+
+- [Server Documentation](../server/README.md)
+- [Project Overview](../README.md)

@@ -1,5 +1,131 @@
-# secure-auth
+# 🔐 Secure Auth
 
-An advance authentication system build from scratch
+An advanced authentication system built from scratch using modern technologies with a focus on security best practices.
 
-any issue use node version 21.0.0
+![Demo](./assets/demo.gif)
+<!-- Replace with your actual demo GIF/image -->
+
+## ✨ Features
+
+- **JWT Authentication** - Secure access & refresh token flow with HTTP-only cookies
+- **Email Verification** - Account verification via email with verification codes
+- **Two-Factor Authentication (2FA)** - TOTP-based MFA using authenticator apps
+- **Password Recovery** - Secure forgot/reset password flow
+- **Session Management** - View, manage, and revoke active sessions across devices
+- **Modern UI** - Clean, responsive interface with dark mode support
+
+## 🛠️ Tech Stack
+
+| Frontend | Backend |
+|----------|----------|
+| Next.js 14 | Node.js |
+| React 18 | Express.js |
+| TypeScript | TypeScript |
+| TailwindCSS | MongoDB |
+| React Query | Mongoose |
+| Radix UI | JWT (jsonwebtoken) |
+| React Hook Form | Passport.js |
+| Zod | Speakeasy (TOTP) |
+| | Resend (Email) |
+| | Winston (Logging) |
+
+## 📁 Project Structure
+
+```
+secure-auth/
+├── client/          # Next.js frontend application
+├── server/          # Express.js backend API
+├── package.json     # Root workspace configuration
+└── eslint.config.js # Shared ESLint configuration
+```
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Node.js 21.0.0** (required)
+- MongoDB instance
+- Resend API key (for emails)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/secure-auth.git
+   cd secure-auth
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   # Server
+   cp server/.env.example server/.env
+   # Edit server/.env with your configuration
+   
+   # Client
+   cp client/.env.example client/.env
+   # Edit client/.env with your configuration
+   ```
+
+4. **Start development servers**
+   ```bash
+   # Terminal 1 - Start backend
+   cd server && npm run dev
+   
+   # Terminal 2 - Start frontend
+   cd client && npm run dev
+   ```
+
+5. **Open the application**
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:8000
+
+## 📸 Screenshots
+
+### Login Page
+![Login](./assets/login.png)
+<!-- Replace with your actual screenshot -->
+
+### Dashboard
+![Dashboard](./assets/dashboard.png)
+<!-- Replace with your actual screenshot -->
+
+### MFA Setup
+![MFA Setup](./assets/mfa-setup.png)
+<!-- Replace with your actual screenshot -->
+
+### Session Management
+![Sessions](./assets/sessions.png)
+<!-- Replace with your actual screenshot -->
+
+## 🌐 Live Demo
+
+- **Frontend**: [https://your-frontend-url.onrender.com](https://your-frontend-url.onrender.com)
+- **Backend API**: [https://your-backend-url.onrender.com](https://your-backend-url.onrender.com)
+
+<!-- Replace with your actual deployed URLs -->
+
+## 📚 Documentation
+
+- [Client Documentation](./client/README.md)
+- [Server Documentation](./server/README.md) - Includes API documentation
+
+## 🧑‍💻 Development
+
+### Available Scripts
+
+```bash
+# Linting
+npm run lint              # Lint all workspaces
+npm run lint:fix          # Auto-fix linting issues
+
+# Formatting
+npm run format            # Format all files
+npm run format:check      # Check formatting
+```
+
+Made with ❤️ by [Your Name](https://github.com/yourusername)
