@@ -23,7 +23,7 @@ An advanced authentication system built from scratch using modern technologies w
 | TypeScript | TypeScript |
 | TailwindCSS | MongoDB |
 | React Query | Mongoose |
-| Radix UI | JWT (jsonwebtoken) |
+| shadcn/ui | JWT (jsonwebtoken) |
 | React Hook Form | Passport.js |
 | Zod | Speakeasy (TOTP) |
 | | Resend (Email) |

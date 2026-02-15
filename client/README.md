@@ -16,9 +16,9 @@ The frontend application for Secure Auth, built with Next.js 14 and modern React
 - **clsx & tailwind-merge** - Conditional class utilities
 
 ### UI Components
-- **Radix UI** - Headless, accessible UI primitives
-  - Dialog, Dropdown Menu, Toast, Tooltip, Avatar, Label, Separator
-- **Lucide React** - Beautiful icons
+- **shadcn/ui** - Beautiful, accessible components built on Radix UI (new-york style)
+  - Button, Input, Dialog, Dropdown Menu, Toast, Tooltip, Avatar, Label, Form, Sheet, Sidebar, Skeleton
+- **Lucide React** - Icon library (integrated with shadcn/ui)
 - **input-otp** - OTP input component for MFA
 
 ### State & Data
