@@ -4,7 +4,7 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 
 ## 🌐 Live API
 
-**Base URL**: `https://your-backend-url.onrender.com/api/v1`
+**Base URL**: `https://secure-auth-9chv.onrender.com/api/v1`
 
 <!-- Replace with your actual deployed URL -->
 
@@ -122,7 +122,7 @@ npm start        # Run production build
 
 ## Base URL
 ```
-Production: https://your-backend-url.onrender.com/api/v1
+Production: https://secure-auth-9chv.onrender.com/api/v1
 Development: http://localhost:8000/api/v1
 ```
 

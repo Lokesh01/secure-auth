@@ -2,7 +2,7 @@
 
 An advanced authentication system built from scratch using modern technologies with a focus on security best practices.
 
-![Demo](./assets/demo.gif)
+![Demo](./assets/secure-auth.gif)
 <!-- Replace with your actual demo GIF/image -->
 
 ## ✨ Features
@@ -91,11 +91,11 @@ secure-auth/
 <!-- Replace with your actual screenshot -->
 
 ### Dashboard
-![Dashboard](./assets/dashboard.png)
+![Dashboard](./assets/home.png)
 <!-- Replace with your actual screenshot -->
 
 ### MFA Setup
-![MFA Setup](./assets/mfa-setup.png)
+![MFA Setup](./assets/mfa.png)
 <!-- Replace with your actual screenshot -->
 
 ### Session Management
@@ -104,8 +104,8 @@ secure-auth/
 
 ## 🌐 Live Demo
 
-- **Frontend**: [https://your-frontend-url.onrender.com](https://your-frontend-url.onrender.com)
-- **Backend API**: [https://your-backend-url.onrender.com](https://your-backend-url.onrender.com)
+- **Frontend**: [https://secure-auth-frontend-06jf.onrender.com](https://secure-auth-frontend-06jf.onrender.com)
+- **Backend API**: [https://secure-auth-9chv.onrender.com](https://secure-auth-9chv.onrender.com)
 
 <!-- Replace with your actual deployed URLs -->
 
@@ -128,4 +128,4 @@ npm run format            # Format all files
 npm run format:check      # Check formatting
 ```
 
-Made with ❤️ by [Your Name](https://github.com/yourusername)
+Made with ❤️ by [Your Name](https://github.com/Lokesh01)
