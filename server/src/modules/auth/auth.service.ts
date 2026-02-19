@@ -73,13 +73,16 @@ export class AuthService {
 
     //sending verification email link
     const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
-    const { data, error } = await sendEmail({
-      to: newUser.email,
-      ...verifyEmailTemplate(verificationUrl),
-    });
-
-    if (!data?.id) {
-      throw new InternalServerException(`${error?.name} ${error?.message}`);
+    try {
+      await sendEmail({
+        to: newUser.email,
+        ...verifyEmailTemplate(verificationUrl),
+      });
+    } catch (error) {
+      logger.error(
+        `Failed to send verification email to ${newUser.email}: ${error}`
+      );
+      throw new InternalServerException('Failed to send verification email');
     }
 
     logger.info(
@@ -278,18 +281,28 @@ export class AuthService {
 
     const resetLink = `${config.APP_ORIGIN}/reset-password?code=${validCode.code}&exp=${expiresAt.getTime()}`;
 
-    const { data, error } = await sendEmail({
-      to: user.email,
-      ...passwordResetTemplate(resetLink),
-    });
+    // const { data, error } = await sendEmail({
+    //   to: user.email,
+    //   ...passwordResetTemplate(resetLink),
+    // });
 
-    if (!data?.id) {
-      throw new InternalServerException(`${error?.name} ${error?.message}`);
+    // if (!data?.id) {
+    //   throw new InternalServerException(`${error?.name} ${error?.message}`);
+    // }
+
+    try {
+      await sendEmail({
+        to: user.email,
+        ...passwordResetTemplate(resetLink),
+      });
+    } catch (error) {
+      logger.error(`Failed to send password reset email: ${error}`);
+      throw new InternalServerException('Failed to send password reset email');
     }
 
     return {
       url: resetLink,
-      emailId: data.id,
+      // emailId: data.id,
     };
   }
 
