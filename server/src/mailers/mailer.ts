@@ -1,5 +1,6 @@
 import { config } from '#config/app.config';
-import { resend } from './resendClient';
+import nodemailer from 'nodemailer';
+import { transporterPromise } from './nodemailerClient';
 
 type Params = {
   to: string | string[];
@@ -9,22 +10,29 @@ type Params = {
   text?: string;
 };
 
-const mailer_sender =
-  config.NODE_ENV === 'development'
-    ? 'no-reply <onboarding@resend.dev>'
-    : `no-reply <${config.MAILER_SENDER}>`;
+const mailer_sender = `no-reply <${config.SMTP_USER}>`;
 
 export const sendEmail = async ({
   to,
   from = mailer_sender,
   subject,
-  text,
   html,
-}: Params) =>
-  await resend.emails.send({
+  text,
+}: Params) => {
+  const transporter = await transporterPromise;
+
+  const info = await transporter.sendMail({
     from,
-    to: Array.isArray(to) ? to : [to],
-    text,
+    to: Array.isArray(to) ? to.join(', ') : to,
     subject,
     html,
+    text,
   });
+
+  // Logs a preview URL in development so you can inspect the email in Ethereal
+  if (config.NODE_ENV === 'development') {
+    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+  }
+
+  return info;
+};

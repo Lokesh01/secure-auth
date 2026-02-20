@@ -13,6 +13,7 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 ## 🛠️ Tech Stack
 
 ### Core
+
 - **Node.js** - Runtime environment
 - **Express.js** - Web framework
 - **TypeScript** - Type-safe JavaScript
@@ -20,6 +21,7 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 - **Mongoose** - MongoDB ODM
 
 ### Authentication & Security
+
 - **jsonwebtoken** - JWT token generation & verification
 - **Passport.js** - Authentication middleware
 - **passport-jwt** - JWT strategy for Passport
@@ -28,12 +30,13 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 - **qrcode** - QR code generation for MFA setup
 
 ### Utilities
+
 - **Zod** - Schema validation
 - **cookie-parser** - Cookie handling
 - **cors** - Cross-origin resource sharing
 - **date-fns** - Date manipulation
 - **uuid** - Unique ID generation
-- **Resend** - Email sending
+- **Nodemailer** - Email sending (Gmail SMTP)
 - **Winston** - Logging
 
 ## 📁 Project Structure
@@ -73,24 +76,28 @@ server/
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - Node.js 21.0.0
 - MongoDB instance
-- Resend API key
+- Gmail account with an App Password
 
 ### Installation
 
 1. **Install dependencies**
-   ```bash
-   npm install
-   ```
 
-2. **Configure environment**
-   ```bash
+```bash
+   npm install
+```
+
+1. **Configure environment**
+
+```bash
    cp .env.example .env
-   ```
-   
+```
+
    Update `.env` with your values:
-   ```env
+
+```env
    PORT=8000
    NODE_ENV=development
    MONGO_URI=mongodb+srv://...
@@ -99,14 +106,21 @@ server/
    JWT_EXPIRES_IN=15m
    JWT_REFRESH_SECRET=your_refresh_secret
    JWT_REFRESH_EXPIRES_IN=30d
-   RESEND_API_KEY=your_resend_key
-   MAILER_SENDER=onboarding@resend.dev
-   ```
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your@gmail.com
+   SMTP_PASS=your_16_char_app_password
+```
 
-3. **Start development server**
-   ```bash
+   > **Gmail setup**: Enable 2-Step Verification on your Google account, then generate an App Password under Google Account → Security → App Passwords and use that as `SMTP_PASS`.
+
+   > **Development**: Emails are intercepted by Ethereal (no real emails sent). Check your terminal for a preview URL after any email flow.
+
+1. **Start development server**
+
+```bash
    npm run dev
-   ```
+```
 
 ## 📜 Available Scripts
 
@@ -121,26 +135,31 @@ npm start        # Run production build
 # 📚 API Documentation
 
 ## Base URL
+
 ```
 Production: https://secure-auth-9chv.onrender.com/api/v1
 Development: http://localhost:8000/api/v1
 ```
 
 ## Authentication
+
 The API uses JWT tokens stored in HTTP-only cookies:
+
 - `accessToken` - Short-lived token (15 min)
-- `refreshToken` - Long-lived token (15 days)
+- `refreshToken` - Long-lived token (30 days)
 
 ## Endpoints
 
 ### Health Check
 
 #### Check API Status
+
 ```http
 GET /health
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "status": "OK",
@@ -154,11 +173,13 @@ GET /health
 ### 🔐 Auth Endpoints
 
 #### Register User
+
 ```http
 POST /api/v1/auth/register
 ```
 
 **Request Body**
+
 ```json
 {
   "name": "John Doe",
@@ -169,6 +190,7 @@ POST /api/v1/auth/register
 ```
 
 **Response** `201 Created`
+
 ```json
 {
   "message": "User registered successfully",
@@ -186,11 +208,13 @@ POST /api/v1/auth/register
 ---
 
 #### Login
+
 ```http
 POST /api/v1/auth/login
 ```
 
 **Request Body**
+
 ```json
 {
   "email": "john@example.com",
@@ -199,6 +223,7 @@ POST /api/v1/auth/login
 ```
 
 **Response** `200 OK` (MFA disabled)
+
 ```json
 {
   "message": "Login successful",
@@ -208,6 +233,7 @@ POST /api/v1/auth/login
 ```
 
 **Response** `200 OK` (MFA enabled)
+
 ```json
 {
   "message": "Verify MFA Authentication",
@@ -223,6 +249,7 @@ POST /api/v1/auth/login
 ---
 
 #### Logout
+
 ```http
 POST /api/v1/auth/logout
 ```
@@ -230,6 +257,7 @@ POST /api/v1/auth/logout
 **Auth Required**: Yes (JWT Cookie)
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Logout successful"
@@ -239,6 +267,7 @@ POST /api/v1/auth/logout
 ---
 
 #### Refresh Access Token
+
 ```http
 GET /api/v1/auth/refresh
 ```
@@ -246,6 +275,7 @@ GET /api/v1/auth/refresh
 **Requires**: `refreshToken` cookie
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Refresh access token successful"
@@ -257,11 +287,13 @@ GET /api/v1/auth/refresh
 ---
 
 #### Verify Email
+
 ```http
 POST /api/v1/auth/verify/email
 ```
 
 **Request Body**
+
 ```json
 {
   "code": "abc123xyz"
@@ -269,6 +301,7 @@ POST /api/v1/auth/verify/email
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Email verified successfully"
@@ -278,11 +311,13 @@ POST /api/v1/auth/verify/email
 ---
 
 #### Forgot Password
+
 ```http
 POST /api/v1/auth/password/forgot
 ```
 
 **Request Body**
+
 ```json
 {
   "email": "john@example.com"
@@ -290,6 +325,7 @@ POST /api/v1/auth/password/forgot
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Password reset email sent successfully"
@@ -299,11 +335,13 @@ POST /api/v1/auth/password/forgot
 ---
 
 #### Reset Password
+
 ```http
 POST /api/v1/auth/password/reset
 ```
 
 **Request Body**
+
 ```json
 {
   "password": "newSecurePassword123",
@@ -312,6 +350,7 @@ POST /api/v1/auth/password/reset
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Reset Password successfully"
@@ -323,6 +362,7 @@ POST /api/v1/auth/password/reset
 ### 🔒 MFA Endpoints
 
 #### Generate MFA Setup
+
 ```http
 GET /api/v1/mfa/setup
 ```
@@ -330,6 +370,7 @@ GET /api/v1/mfa/setup
 **Auth Required**: Yes (JWT Cookie)
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Scan the QR code or enter the secret key in your authenticator app",
@@ -341,6 +382,7 @@ GET /api/v1/mfa/setup
 ---
 
 #### Verify MFA Setup
+
 ```http
 POST /api/v1/mfa/verify
 ```
@@ -348,6 +390,7 @@ POST /api/v1/mfa/verify
 **Auth Required**: Yes (JWT Cookie)
 
 **Request Body**
+
 ```json
 {
   "code": "123456",
@@ -356,6 +399,7 @@ POST /api/v1/mfa/verify
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "MFA setup verified successfully",
@@ -368,6 +412,7 @@ POST /api/v1/mfa/verify
 ---
 
 #### Revoke MFA
+
 ```http
 PUT /api/v1/mfa/revoke
 ```
@@ -375,6 +420,7 @@ PUT /api/v1/mfa/revoke
 **Auth Required**: Yes (JWT Cookie)
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "MFA revoked successfully",
@@ -387,11 +433,13 @@ PUT /api/v1/mfa/revoke
 ---
 
 #### Verify MFA for Login
+
 ```http
 POST /api/v1/mfa/verify-login
 ```
 
 **Request Body**
+
 ```json
 {
   "code": "123456",
@@ -400,6 +448,7 @@ POST /api/v1/mfa/verify-login
 ```
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "verified and login successfully",
@@ -416,6 +465,7 @@ POST /api/v1/mfa/verify-login
 > All session endpoints require authentication (JWT Cookie).
 
 #### Get Current Session
+
 ```http
 GET /api/v1/session
 ```
@@ -423,6 +473,7 @@ GET /api/v1/session
 **Auth Required**: Yes (JWT Cookie)
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Session retrieved successfully",
@@ -443,6 +494,7 @@ GET /api/v1/session
 ---
 
 #### Get All Sessions
+
 ```http
 GET /api/v1/session/all
 ```
@@ -450,6 +502,7 @@ GET /api/v1/session/all
 **Auth Required**: Yes (JWT Cookie)
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Retrieved all session successfully",
@@ -476,6 +529,7 @@ GET /api/v1/session/all
 ---
 
 #### Delete Session
+
 ```http
 DELETE /api/v1/session/:id
 ```
@@ -483,9 +537,11 @@ DELETE /api/v1/session/:id
 **Auth Required**: Yes (JWT Cookie)
 
 **URL Parameters**
+
 - `id` - Session ID to delete
 
 **Response** `200 OK`
+
 ```json
 {
   "message": "Session deleted successfully"
@@ -506,6 +562,7 @@ All errors follow this format:
 ```
 
 ### Common HTTP Status Codes
+
 - `400` - Bad Request (validation errors)
 - `401` - Unauthorized (invalid/missing token)
 - `404` - Not Found
@@ -522,6 +579,7 @@ All errors follow this format:
    - Enable "Include cookies" in Postman settings
 
 ### Postman Tips
+
 - Create an environment with `baseUrl` variable
 - Use Postman's cookie jar to manage authentication cookies
 - The cookies are automatically sent with subsequent requests
