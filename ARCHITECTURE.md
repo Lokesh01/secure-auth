@@ -23,13 +23,15 @@ This comprehensive guide covers the entire authentication system flow from top t
 ## Architecture Overview
 
 ### Tech Stack
+
 - **Backend**: Node.js, Express, TypeScript, MongoDB (Mongoose)
 - **Frontend**: Next.js 14 (App Router), React, TanStack Query
 - **Authentication**: JWT (Access + Refresh tokens), TOTP for MFA
-- **Email**: Resend API
+- **Email**: Nodemailer (Gmail SMTP)
 - **Password Hashing**: bcrypt
 
 ### Project Structure (Monorepo)
+
 ```
 secure-auth/
 ├── server/              # Express API
@@ -52,6 +54,7 @@ secure-auth/
 ## Database Models
 
 ### User Model (`server/src/database/models/user.model.ts`)
+
 ```typescript
 {
   name: string;           // Required
@@ -69,11 +72,13 @@ secure-auth/
 ```
 
 **Key Features:**
+
 - Password hashing via Mongoose pre-save hook
 - `comparePassword()` method for authentication
 - `toJSON` transform removes sensitive fields (password, 2FA secret)
 
 ### Session Model (`server/src/database/models/session.model.ts`)
+
 ```typescript
 {
   userId: ObjectId;      // Reference to User
@@ -84,11 +89,13 @@ secure-auth/
 ```
 
 **Key Features:**
+
 - Tracks user sessions across devices
 - Enables session revocation
 - Supports multiple concurrent sessions per user
 
 ### Verification Model (`server/src/database/models/verification.model.ts`)
+
 ```typescript
 {
   userId: ObjectId;      // Reference to User
@@ -112,18 +119,20 @@ Create user (password hashed automatically via pre-save hook)
     ↓
 Generate verification code (UUID)
     ↓
-Send verification email via Resend
+Send verification email via Nodemailer
     ↓
 Return success response (201)
 ```
 
 **Key Points:**
+
 - Password is hashed before saving (Mongoose pre-save middleware)
 - Verification code expires in 45 minutes
 - Email verification is mandatory before full account access
-- Rate limiting on email sending (via Resend)
+- In development, emails are intercepted by Ethereal (check terminal for preview URL)
 
 **API Endpoint:** `POST /api/v1/auth/register`
+
 ```json
 Request: { "name": "John", "email": "john@example.com", "password": "secure123", "confirmPassword": "secure123" }
 Response: { "message": "User registered successfully", "data": { /* user object */ } }
@@ -146,6 +155,7 @@ Return success response
 ```
 
 **API Endpoint:** `POST /api/v1/auth/verify/email`
+
 ```json
 Request: { "code": "abc123xyz" }
 Response: { "message": "Email verified successfully" }
@@ -172,6 +182,7 @@ Return user data + success message
 ```
 
 **API Endpoint:** `POST /api/v1/auth/login`
+
 ```json
 Request: { "email": "john@example.com", "password": "secure123" }
 Response: { "message": "Login successful", "user": { /* user data */ }, "mfaRequired": false }
@@ -203,6 +214,7 @@ Set cookies + Return user data
 ```
 
 **Key Points:**
+
 - Access tokens are NOT set until MFA is verified
 - This prevents unauthorized access even if password is compromised
 
@@ -249,6 +261,7 @@ Return new accessToken (and new refreshToken if rotated)
 **API Endpoint:** `GET /api/v1/auth/refresh`
 
 **Key Points:**
+
 - Access token: 15 minutes expiry
 - Refresh token: 30 days expiry
 - Token rotation: New refresh token issued if current one expires within 24h
@@ -291,6 +304,7 @@ Return success
 ```
 
 **API Endpoints:**
+
 - `GET /api/v1/mfa/setup` - Generate secret + QR code
 - `POST /api/v1/mfa/verify` - Verify and enable MFA
 
@@ -315,6 +329,7 @@ Set cookies + Return user data
 ```
 
 **API Endpoint:** `POST /api/v1/mfa/verify-login`
+
 ```json
 Request: { "code": "123456", "email": "john@example.com" }
 Response: { "message": "verified and login successfully", "user": { /* user data */ } }
@@ -371,6 +386,7 @@ Return list of sessions with userAgent, createdAt, expiresAt
 ```
 
 **API Endpoint:** `GET /api/v1/session/all` (Requires JWT)
+
 ```json
 Response: {
   "sessions": [
@@ -412,7 +428,7 @@ Check rate limit: max 3 requests per 10 minutes
     ↓
 Generate verification code (1 hour expiry)
     ↓
-Send password reset email via Resend
+Send password reset email via Nodemailer
     ↓
 Return success (always - to prevent email enumeration)
 ```
@@ -420,6 +436,7 @@ Return success (always - to prevent email enumeration)
 **Rate Limiting:** 3 attempts per 10 minutes per user
 
 **API Endpoint:** `POST /api/v1/auth/password/forgot`
+
 ```json
 Request: { "email": "john@example.com" }
 Response: { "message": "Password reset email sent successfully" }
@@ -452,6 +469,7 @@ Return success
 **Security:** Invalidates all existing sessions on password reset
 
 **API Endpoint:** `POST /api/v1/auth/password/reset`
+
 ```json
 Request: { "password": "newSecure123", "verificationCode": "abc123" }
 Response: { "message": "Reset Password successfully" }
@@ -464,6 +482,7 @@ Response: { "message": "Reset Password successfully" }
 ### JWT Structure
 
 **Access Token (15 min)**
+
 ```json
 {
   "userId": "user_id",
@@ -475,6 +494,7 @@ Response: { "message": "Reset Password successfully" }
 ```
 
 **Refresh Token (30 days)**
+
 ```json
 {
   "sessionId": "session_id",
@@ -541,39 +561,46 @@ Response: { "message": "Reset Password successfully" }
 ## Security Features
 
 ### 1. Password Security
+
 - **bcrypt** hashing with automatic salting
 - Pre-save hook for automatic hashing
 - Never stored in plain text
 
 ### 2. Token Security
+
 - **HTTP-only cookies**: Cannot be accessed via JavaScript (XSS protection)
 - **Short-lived access tokens**: 15 minutes (minimizes damage if compromised)
 - **Long-lived refresh tokens**: 30 days (for UX, with rotation)
 - **Token rotation**: New refresh token when expiring within 24h
 
 ### 3. Session Security
+
 - Sessions stored in database (can be revoked)
 - User agent tracking (identify devices)
 - Expiration tracking
 - Delete all sessions on password reset
 
 ### 4. MFA Security
+
 - **TOTP** (Time-based One-Time Password) - industry standard
 - Secret stored encrypted in database (hidden in responses)
 - QR code for easy setup
 - Required before granting access
 
 ### 5. Input Validation
+
 - **Zod** schema validation on all inputs
 - Sanitization at API boundary
 - TypeScript for compile-time safety
 
 ### 6. Error Handling
+
 - Custom error classes (AppError)
 - Error codes for programmatic handling
 - No stack traces in production responses
 
 ### 7. Security Headers & CORS
+
 - CORS configured with credentials support
 - Environment-based configurations
 
@@ -582,6 +609,7 @@ Response: { "message": "Reset Password successfully" }
 ## API Endpoints Summary
 
 ### Auth Endpoints (No Auth Required)
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register new user |
@@ -592,11 +620,13 @@ Response: { "message": "Reset Password successfully" }
 | GET | `/api/v1/auth/refresh` | Refresh access token |
 
 ### Auth Endpoints (Auth Required)
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/auth/logout` | Logout (delete session) |
 
 ### MFA Endpoints (Auth Required)
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/mfa/setup` | Generate MFA secret + QR |
@@ -604,11 +634,13 @@ Response: { "message": "Reset Password successfully" }
 | PUT | `/api/v1/mfa/revoke` | Disable MFA |
 
 ### MFA Endpoints (No Auth Required)
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/mfa/verify-login` | Verify MFA during login |
 
 ### Session Endpoints (Auth Required)
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/v1/session` | Get current user |
@@ -620,6 +652,7 @@ Response: { "message": "Reset Password successfully" }
 ## Frontend Architecture
 
 ### Tech Stack
+
 - **Framework**: Next.js 14 (App Router)
 - **State Management**: React Context + TanStack Query
 - **Styling**: Tailwind CSS + shadcn/ui
@@ -628,6 +661,7 @@ Response: { "message": "Reset Password successfully" }
 ### Key Components
 
 #### Authentication Context (`client/context/auth-provider.tsx`)
+
 ```typescript
 // Provides user data, loading states, refetch function
 // Wraps entire app
@@ -635,6 +669,7 @@ Response: { "message": "Reset Password successfully" }
 ```
 
 #### API Client (`client/lib/api.ts`)
+
 ```typescript
 // Axios instance with interceptors
 // Automatic cookie handling
@@ -642,10 +677,12 @@ Response: { "message": "Reset Password successfully" }
 ```
 
 #### Custom Hooks
+
 - `useAuth()` - Fetch current user session
 - `useToast()` - Toast notifications
 
 ### Route Structure
+
 ```
 client/app/
 ├── (auth)/                 # Auth pages (redirect if logged in)
@@ -677,34 +714,40 @@ client/app/
 ## Key Interview Points
 
 ### 1. Why use both Access and Refresh tokens?
+
 - **Access token**: Short-lived (15 min) - limits damage if compromised
 - **Refresh token**: Long-lived (30 days) - provides seamless UX
 - If access token stolen, attacker has limited time
 - Refresh token can be rotated/disabled
 
 ### 2. Why store sessions in MongoDB?
+
 - Can revoke sessions remotely
 - Track login history
 - Force logout from all devices
 - Prevent token reuse after logout
 
 ### 3. Why HTTP-only cookies?
+
 - Prevents XSS attacks (JavaScript cannot read cookies)
 - CSRF protection (same-site policy)
 - More secure than localStorage
 
 ### 4. Why MFA?
+
 - Second layer of defense
 - Password compromise doesn't equal account compromise
 - TOTP is time-based and single-use
 
 ### 5. Password reset security
+
 - Rate limiting prevents abuse
 - One-time codes (deleted after use)
 - Invalidate all sessions on password change
 - Silent failure (same response whether user exists)
 
 ### 6. JWT verification process
+
 1. Extract token from cookie
 2. Verify signature using JWT_SECRET
 3. Verify expiration
@@ -713,15 +756,24 @@ client/app/
 6. Validate session exists in DB
 
 ### 7. Error handling strategy
+
 - Custom error classes with HTTP status codes
 - Error codes for programmatic handling
 - User-friendly messages (not technical details)
 - Global error handler middleware
 
 ### 8. Database indexing
+
 - User: email (unique index)
 - Session: userId (index for fast lookups)
 - Verification: code + type + expiresAt (compound index)
+
+### 9. Why Nodemailer over a third-party email API?
+
+- No external API dependency or cost
+- Full control over email transport (SMTP)
+- In development, Ethereal intercepts emails locally with no real sending
+- Easy to swap SMTP provider by changing environment variables
 
 ---
 
@@ -852,6 +904,7 @@ client/app/
 ## Environment Variables
 
 ### Server (.env)
+
 ```env
 PORT=8000
 NODE_ENV=development
@@ -863,11 +916,14 @@ JWT_EXPIRES_IN=15m
 JWT_REFRESH_SECRET=your_refresh_secret
 JWT_REFRESH_EXPIRES_IN=30d
 
-RESEND_API_KEY=your_resend_key
-MAILER_SENDER=onboarding@resend.dev
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your@gmail.com
+SMTP_PASS=your_16_char_app_password
 ```
 
 ### Client (.env)
+
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ```
@@ -877,6 +933,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
 ## Development Commands
 
 ### Server
+
 ```bash
 cd server
 npm run dev          # Start development server
@@ -885,6 +942,7 @@ npm start            # Run production build
 ```
 
 ### Client
+
 ```bash
 cd client
 npm run dev          # Start development server
@@ -892,6 +950,7 @@ npm run build        # Build for production
 ```
 
 ### Root
+
 ```bash
 npm run lint         # Lint all
 npm run format       # Format all
@@ -923,6 +982,9 @@ A: HTTP-only cookies cannot be accessed by JavaScript, preventing XSS attacks fr
 
 **Q: What is the purpose of the verification code system?**
 A: Verification codes confirm user ownership of the email address. They have short expiration times (45 min - 1 hour) and can only be used once, providing a secure way to verify identity for email and password reset flows.
+
+**Q: Why did you choose Nodemailer over a third-party email service like Resend?**
+A: For a personal project, Nodemailer with Gmail SMTP avoids any external API dependency or cost. In development, Ethereal intercepts all emails locally so no real emails are sent during testing. In production, switching SMTP providers only requires changing environment variables — no code changes needed.
 
 ---
 

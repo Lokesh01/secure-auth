@@ -26,7 +26,7 @@ An advanced authentication system built from scratch using modern technologies w
 | shadcn/ui | JWT (jsonwebtoken) |
 | React Hook Form | Passport.js |
 | Zod | Speakeasy (TOTP) |
-| | Resend (Email) |
+| | Nodemailer (Email) |
 | | Winston (Logging) |
 
 ## 📁 Project Structure
@@ -45,23 +45,26 @@ secure-auth/
 
 - **Node.js 21.0.0** (required)
 - MongoDB instance
-- Resend API key (for emails)
+- Gmail account with an App Password (for emails)
 
 ### Installation
 
 1. **Clone the repository**
-   ```bash
+
+```bash
    git clone https://github.com/yourusername/secure-auth.git
    cd secure-auth
-   ```
+```
 
-2. **Install dependencies**
-   ```bash
+1. **Install dependencies**
+
+```bash
    npm install
-   ```
+```
 
-3. **Set up environment variables**
-   ```bash
+1. **Set up environment variables**
+
+```bash
    # Server
    cp server/.env.example server/.env
    # Edit server/.env with your configuration
@@ -69,45 +72,60 @@ secure-auth/
    # Client
    cp client/.env.example client/.env
    # Edit client/.env with your configuration
-   ```
+```
 
-4. **Start development servers**
-   ```bash
+1. **Configure email (Gmail SMTP)**
+
+   This project uses Nodemailer with Gmail SMTP. To set it up:
+   - Enable **2-Step Verification** on your Google account
+   - Generate an **App Password** under Google Account → Security → App Passwords
+   - Add the following to your `server/.env`:
+
+```env
+   SMTP_HOST=smtp.gmail.com
+   SMTP_PORT=587
+   SMTP_USER=your@gmail.com
+   SMTP_PASS=your_16_char_app_password
+```
+
+   > In development, emails are intercepted by **Ethereal** (a fake SMTP service). Check your terminal for a preview URL after triggering any email flow.
+
+1. **Start development servers**
+
+```bash
    # Terminal 1 - Start backend
    cd server && npm run dev
    
    # Terminal 2 - Start frontend
    cd client && npm run dev
-   ```
+```
 
-5. **Open the application**
-   - Frontend: http://localhost:3000
-   - Backend: http://localhost:8000
+1. **Open the application**
+   - Frontend: <http://localhost:3000>
+   - Backend: <http://localhost:8000>
 
 ## 📸 Screenshots
 
 ### Login Page
+
 ![Login](./assets/login.png)
-<!-- Replace with your actual screenshot -->
 
 ### Dashboard
+
 ![Dashboard](./assets/home.png)
-<!-- Replace with your actual screenshot -->
 
 ### MFA Setup
+
 ![MFA Setup](./assets/mfa.png)
-<!-- Replace with your actual screenshot -->
 
 ### Session Management
+
 ![Sessions](./assets/sessions.png)
-<!-- Replace with your actual screenshot -->
 
 ## 🌐 Live Demo
 
 - **Frontend**: [https://secure-auth-frontend-06jf.onrender.com](https://secure-auth-frontend-06jf.onrender.com)
 - **Backend API**: [https://secure-auth-9chv.onrender.com](https://secure-auth-9chv.onrender.com)
-
-<!-- Replace with your actual deployed URLs -->
 
 ## 📚 Documentation
 
