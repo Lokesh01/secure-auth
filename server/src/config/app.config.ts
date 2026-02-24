@@ -21,10 +21,9 @@ const appConfig = () => ({
     REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '30d') as StringValue,
     AUDIENCE: getEnv('JWT_AUDIENCE', 'user'),
   },
+  BREVO_API_KEY: getEnv('BREVO_API_KEY'),
+  BREVO_SENDER_EMAIL: getEnv('BREVO_SENDER_EMAIL', 'negi.lokesh347@gmail.com'),
   SMTP_USER: getEnv('SMTP_USER'),
-  SMTP_PASS: getEnv('SMTP_PASS'),
-  SMTP_PORT: Number(getEnv('SMTP_PORT', '587')),
-  SMTP_HOST: getEnv('SMTP_HOST'),
 });
 
 export const config = appConfig();
