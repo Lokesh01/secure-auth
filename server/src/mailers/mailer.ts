@@ -10,7 +10,10 @@ type Params = {
   text?: string;
 };
 
-const mailer_sender = `no-reply <${config.SMTP_USER}>`;
+const mailer_sender =
+  config.NODE_ENV === 'development'
+    ? `no-reply <${config.SMTP_USER}>`
+    : `no-reply <${config.BREVO_SENDER_EMAIL}>`;
 
 export const sendEmail = async ({
   to,
@@ -21,18 +24,24 @@ export const sendEmail = async ({
 }: Params) => {
   const transporter = await transporterPromise;
 
-  const info = await transporter.sendMail({
-    from,
-    to: Array.isArray(to) ? to.join(', ') : to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to: Array.isArray(to) ? to.join(', ') : to,
+      subject,
+      html,
+      text,
+    });
 
-  // Logs a preview URL in development so you can inspect the email in Ethereal
-  if (config.NODE_ENV === 'development') {
-    console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    if (config.NODE_ENV === 'development') {
+      console.log('Preview URL:', nodemailer.getTestMessageUrl(info));
+    }
+
+    return info;
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    throw new Error(
+      `Email sending failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
-
-  return info;
 };
