@@ -26,7 +26,7 @@ An advanced authentication system built from scratch using modern technologies w
 | shadcn/ui | JWT (jsonwebtoken) |
 | React Hook Form | Passport.js |
 | Zod | Speakeasy (TOTP) |
-| | Nodemailer (Email) |
+| | Nodemailer + Brevo (Email) |
 | | Winston (Logging) |
 
 ## 📁 Project Structure
@@ -45,7 +45,7 @@ secure-auth/
 
 - **Node.js 21.0.0** (required)
 - MongoDB instance
-- Gmail account with an App Password (for emails)
+- Brevo account (for production emails)
 
 ### Installation
 
@@ -74,18 +74,18 @@ secure-auth/
    # Edit client/.env with your configuration
 ```
 
-1. **Configure email (Gmail SMTP)**
+1. **Configure email**
+   This project uses Nodemailer with Brevo in production and Ethereal in development.
 
-   This project uses Nodemailer with Gmail SMTP. To set it up:
-   - Enable **2-Step Verification** on your Google account
-   - Generate an **App Password** under Google Account → Security → App Passwords
+   - Sign up at [brevo.com](https://brevo.com)
+   - Go to **Settings** → **SMTP & API** → **API Keys** and generate an API key
+   - Go to **Settings** → **Senders & IP** → **Senders** and verify your email address
    - Add the following to your `server/.env`:
 
 ```env
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
    SMTP_USER=your@gmail.com
-   SMTP_PASS=your_16_char_app_password
+   BREVO_API_KEY=your_brevo_api_key
+   BREVO_SENDER_EMAIL=your@gmail.com
 ```
 
    > In development, emails are intercepted by **Ethereal** (a fake SMTP service). Check your terminal for a preview URL after triggering any email flow.

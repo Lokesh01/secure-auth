@@ -27,7 +27,7 @@ This comprehensive guide covers the entire authentication system flow from top t
 - **Backend**: Node.js, Express, TypeScript, MongoDB (Mongoose)
 - **Frontend**: Next.js 14 (App Router), React, TanStack Query
 - **Authentication**: JWT (Access + Refresh tokens), TOTP for MFA
-- **Email**: Nodemailer (Gmail SMTP)
+- **Email**: Nodemailer (Brevo in production, Ethereal in development)
 - **Password Hashing**: bcrypt
 
 ### Project Structure (Monorepo)
@@ -129,6 +129,7 @@ Return success response (201)
 - Password is hashed before saving (Mongoose pre-save middleware)
 - Verification code expires in 45 minutes
 - Email verification is mandatory before full account access
+- In production, emails are sent via Brevo SMTP API
 - In development, emails are intercepted by Ethereal (check terminal for preview URL)
 
 **API Endpoint:** `POST /api/v1/auth/register`
@@ -770,10 +771,21 @@ client/app/
 
 ### 9. Why Nodemailer over a third-party email API?
 
-- No external API dependency or cost
-- Full control over email transport (SMTP)
+- Acts as a universal email client that works with any transport
 - In development, Ethereal intercepts emails locally with no real sending
-- Easy to swap SMTP provider by changing environment variables
+- In production, uses Brevo's API transport since free hosting platforms
+  like Render block outbound SMTP ports
+- Keeps the sendEmail interface consistent across environments — only the
+  underlying transport changes, no application code changes needed when
+  switching email providers
+
+### 10. How do you handle partial database writes when email sending fails?
+
+In the register flow we use MongoDB transactions — if the email fails,
+abortTransaction() automatically rolls back both the user and verification
+code creation. In the forgotPassword flow we manually delete the verification
+code if the email fails since only one document is involved and a full
+transaction would be unnecessary overhead
 
 ---
 
@@ -916,10 +928,9 @@ JWT_EXPIRES_IN=15m
 JWT_REFRESH_SECRET=your_refresh_secret
 JWT_REFRESH_EXPIRES_IN=30d
 
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
 SMTP_USER=your@gmail.com
-SMTP_PASS=your_16_char_app_password
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=your@gmail.com
 ```
 
 ### Client (.env)
@@ -984,7 +995,12 @@ A: HTTP-only cookies cannot be accessed by JavaScript, preventing XSS attacks fr
 A: Verification codes confirm user ownership of the email address. They have short expiration times (45 min - 1 hour) and can only be used once, providing a secure way to verify identity for email and password reset flows.
 
 **Q: Why did you choose Nodemailer over a third-party email service like Resend?**
-A: For a personal project, Nodemailer with Gmail SMTP avoids any external API dependency or cost. In development, Ethereal intercepts all emails locally so no real emails are sent during testing. In production, switching SMTP providers only requires changing environment variables — no code changes needed.
+A: Nodemailer acts as a universal email client that works with any transport —
+in development it uses Ethereal to intercept emails locally with no real sending,
+and in production it uses Brevo's API transport since free hosting platforms like
+Render block outbound SMTP ports. This approach keeps the sendEmail interface
+consistent across environments while swapping only the underlying transport,
+meaning no application code changes are needed when switching email providers.
 
 ---
 

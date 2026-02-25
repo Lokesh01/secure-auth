@@ -37,6 +37,7 @@ import {
 } from '#mailers/templates/template';
 import { HTTP_STATUS } from '#config/http.config';
 import { hashValue } from '#common/utils/bcrypt';
+import mongoose from 'mongoose';
 
 export class AuthService {
   public async register(registerData: RegisteredDto) {
@@ -56,44 +57,50 @@ export class AuthService {
       );
     }
 
-    logger.info(`Creating new user with email: ${email}`);
-    const newUser = await userModel.create({
-      name,
-      email,
-      password,
-    });
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-    const userId = newUser._id;
-
-    const verification = await VerificationCodeModel.create({
-      userId,
-      type: VerificationEnum.EMAIL_VERIFICATION,
-      expiresAt: fortyFiveMinutesFromNow(),
-    });
-
-    //sending verification email link
-    const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
     try {
+      logger.info(`Creating new user with email: ${email}`);
+
+      const newUser = new userModel({ name, email, password });
+      await newUser.save({ session });
+
+      const verification = new VerificationCodeModel({
+        userId: newUser._id,
+        type: VerificationEnum.EMAIL_VERIFICATION,
+        expiresAt: fortyFiveMinutesFromNow(),
+      });
+      await verification.save({ session });
+
+      const verificationUrl = `${config.APP_ORIGIN}/confirm-account?code=${verification.code}`;
+
       await sendEmail({
         to: newUser.email,
         ...verifyEmailTemplate(verificationUrl),
       });
-    } catch (error) {
-      logger.error(
-        `Failed to send verification email to ${newUser.email}: ${error}`
+
+      await session.commitTransaction();
+
+      logger.info(
+        `User registered successfully: ${email}, User ID: ${newUser._id}`
       );
-      throw new InternalServerException('Failed to send verification email');
+
+      return { user: newUser };
+    } catch (error) {
+      await session.abortTransaction();
+
+      logger.error(`Registration failed for email: ${email}: ${error}`);
+
+      if (error instanceof InternalServerException) {
+        throw error;
+      }
+
+      throw new InternalServerException('Failed to register user');
+    } finally {
+      session.endSession();
     }
-
-    logger.info(
-      `User registered successfully: ${email}, User ID: ${newUser._id}`
-    );
-
-    return {
-      user: newUser,
-    };
   }
-
   public async login(loginData: LoginDto) {
     const { email, password, userAgent } = loginData;
 
@@ -254,7 +261,6 @@ export class AuthService {
       throw new NotFoundException('User not found');
     }
 
-    //check mail rate limit is 3 emails per 10 min
     const timeInterval = tenMinutesAgo();
     const maxAttempt = 3;
 
@@ -281,28 +287,19 @@ export class AuthService {
 
     const resetLink = `${config.APP_ORIGIN}/reset-password?code=${validCode.code}&exp=${expiresAt.getTime()}`;
 
-    // const { data, error } = await sendEmail({
-    //   to: user.email,
-    //   ...passwordResetTemplate(resetLink),
-    // });
-
-    // if (!data?.id) {
-    //   throw new InternalServerException(`${error?.name} ${error?.message}`);
-    // }
-
     try {
       await sendEmail({
         to: user.email,
         ...passwordResetTemplate(resetLink),
       });
     } catch (error) {
+      await VerificationCodeModel.deleteOne({ _id: validCode._id });
       logger.error(`Failed to send password reset email: ${error}`);
       throw new InternalServerException('Failed to send password reset email');
     }
 
     return {
       url: resetLink,
-      // emailId: data.id,
     };
   }
 
