@@ -36,7 +36,7 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 - **cors** - Cross-origin resource sharing
 - **date-fns** - Date manipulation
 - **uuid** - Unique ID generation
-- **Nodemailer** - Email sending (Gmail SMTP)
+- **Nodemailer** - Email sending (Brevo in production, Ethereal in development)
 - **Winston** - Logging
 
 ## 📁 Project Structure
@@ -79,7 +79,7 @@ server/
 
 - Node.js 21.0.0
 - MongoDB instance
-- Gmail account with an App Password
+- Brevo account
 
 ### Installation
 
@@ -89,7 +89,7 @@ server/
    npm install
 ```
 
-1. **Configure environment**
+2. **Configure environment**
 
 ```bash
    cp .env.example .env
@@ -106,17 +106,14 @@ server/
    JWT_EXPIRES_IN=15m
    JWT_REFRESH_SECRET=your_refresh_secret
    JWT_REFRESH_EXPIRES_IN=30d
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
    SMTP_USER=your@gmail.com
-   SMTP_PASS=your_16_char_app_password
+   BREVO_API_KEY=your_brevo_api_key
+   BREVO_SENDER_EMAIL=your@gmail.com
 ```
-
-   > **Gmail setup**: Enable 2-Step Verification on your Google account, then generate an App Password under Google Account → Security → App Passwords and use that as `SMTP_PASS`.
 
    > **Development**: Emails are intercepted by Ethereal (no real emails sent). Check your terminal for a preview URL after any email flow.
 
-1. **Start development server**
+3. **Start development server**
 
 ```bash
    npm run dev
