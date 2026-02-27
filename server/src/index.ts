@@ -14,6 +14,7 @@ import { authenticateJWT } from '#common/strategies/jwt.strategy';
 import authRoutes from './modules/auth/auth.routes';
 import sessionRoutes from './modules/session/session.routes';
 import mfaRoutes from './modules/mfa/mfa.routes';
+import { transporterPromise } from './mailers/nodemailerClient';
 
 const app = express();
 const BASE_PATH = config.BASE_PATH;
@@ -48,9 +49,20 @@ app.use(`${BASE_PATH}/session`, authenticateJWT, sessionRoutes);
 
 app.use(errorHandler);
 
-app.listen(config.PORT, async () => {
-  console.log(
-    `Server running in ${config.NODE_ENV} mode on port ${config.PORT}`
-  );
-  await connectDB();
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    await transporterPromise; // verify transporter is ready
+
+    app.listen(config.PORT, () => {
+      console.log(
+        `Server running in ${config.NODE_ENV} mode on port ${config.PORT}`
+      );
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
