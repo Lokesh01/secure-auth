@@ -36,7 +36,11 @@ app.get(
 
 //health check
 app.get('/health', (req, res) => {
-  logger.info('Health check ping received');
+  const isUptimeRobot = req.headers['user-agent']?.includes('UptimeRobot');
+
+  if (isUptimeRobot) {
+    logger.info('Health check ping received from UptimeRobot');
+  }
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
