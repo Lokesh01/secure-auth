@@ -15,6 +15,7 @@ import authRoutes from './modules/auth/auth.routes';
 import sessionRoutes from './modules/session/session.routes';
 import mfaRoutes from './modules/mfa/mfa.routes';
 import { transporterPromise } from './mailers/nodemailerClient';
+import { logger } from './common/utils/logger';
 
 const app = express();
 const BASE_PATH = config.BASE_PATH;
@@ -35,6 +36,7 @@ app.get(
 
 //health check
 app.get('/health', (req, res) => {
+  logger.info('Health check ping received');
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
