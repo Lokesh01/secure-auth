@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as GitHubStrategy, Profile } from 'passport-github2';
+import { VerifyCallback } from 'passport-oauth2';
 import { config } from '#config/app.config';
 import userModel from '#database/models/user.model';
 import { logger } from '#common/utils/logger';
@@ -27,7 +28,7 @@ export const setupGithubStrategy = () => {
         accessToken: string,
         refreshToken: string,
         profile: Profile,
-        done: Function
+        done: VerifyCallback
       ) => {
         try {
           const email = profile.emails?.[0]?.value;
