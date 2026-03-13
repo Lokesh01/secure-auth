@@ -118,6 +118,19 @@ export class AuthService {
       );
     }
 
+    // new — check if user signed up with OAuth
+    if (!user.password) {
+      logger.warn(
+        `Login failed: User with email ${email} 
+        signed up with ${user.authProvider}`
+      );
+      throw new BadRequestException(
+        `This account was created using ${user.authProvider}. 
+        Please login with ${user.authProvider} instead.`,
+        ErrorCode.AUTH_WRONG_PROVIDER
+      );
+    }
+
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
@@ -162,6 +175,42 @@ export class AuthService {
       accessToken,
       refreshToken,
       mfaRequired: false,
+    };
+  }
+
+  public async oAuthLogin(userId: string, userAgent?: string) {
+    const user = await userModel.findById(userId);
+
+    if (!user) {
+      throw new BadRequestException(
+        'User not found',
+        ErrorCode.AUTH_USER_NOT_FOUND
+      );
+    }
+
+    logger.info(`OAuth login: Creating session for user ID: ${userId}`);
+
+    const session = await sessionModel.create({
+      userId: user._id,
+      userAgent,
+    });
+
+    const accessToken = signJwtToken({
+      userId: user._id,
+      sessionId: session._id,
+    });
+
+    const refreshToken = signJwtToken(
+      { sessionId: session._id },
+      refreshTokenSignOptions
+    );
+
+    logger.info(`OAuth login successful for user ID: ${userId}`);
+
+    return {
+      accessToken,
+      refreshToken,
+      user,
     };
   }
 
@@ -259,6 +308,15 @@ export class AuthService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    // new — block OAuth users from resetting password
+    if (user.authProvider !== 'local') {
+      throw new BadRequestException(
+        `This account uses ${user.authProvider} to login.
+        Password reset is not available.`,
+        ErrorCode.AUTH_WRONG_PROVIDER
+      );
     }
 
     const timeInterval = tenMinutesAgo();
