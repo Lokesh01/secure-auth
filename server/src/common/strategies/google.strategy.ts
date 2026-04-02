@@ -14,7 +14,7 @@ export const setupGoogleStrategy = () => {
       {
         clientID: config.GOOGLE_CLIENT_ID,
         clientSecret: config.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${config.APP_ORIGIN}/api/v1/auth/google/callback`,
+        callbackURL: `${config.BASE_API_URL}/api/v1/auth/google/callback`,
       },
       async (
         accessToken: string,
