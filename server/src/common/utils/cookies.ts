@@ -19,7 +19,7 @@ const defaults: CookieOptions = {
   // This means we can't use 'strict' or 'lax' as cookies would be blocked on cross-origin requests.
   // 'none' is required for cross-origin cookies but needs 'secure: true'.
   // Ideal fix: use a custom domain with 'lax' + domain: '.mycompany.com'
-  sameSite: config.NODE_ENV === 'production' ? 'none' : 'lax',
+  sameSite: 'none',
 };
 export const getRefreshTokenCookieOptions = (): CookieOptions => {
   const expiresIn = config.JWT.REFRESH_EXPIRES_IN;
