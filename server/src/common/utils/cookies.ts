@@ -13,7 +13,7 @@ export const REFRESH_PATH = `${config.BASE_PATH}/auth/refresh`;
 const defaults: CookieOptions = {
   httpOnly: true,
   // 'secure' must be true when sameSite is 'none'
-  secure: config.NODE_ENV === 'production' ? true : false,
+  secure: true,
   // In production, frontend and backend are on different subdomains of onrender.com
   // which is on the Public Suffix List, so browsers treat them as completely separate sites.
   // This means we can't use 'strict' or 'lax' as cookies would be blocked on cross-origin requests.
