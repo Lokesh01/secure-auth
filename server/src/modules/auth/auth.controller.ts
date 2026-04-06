@@ -92,7 +92,7 @@ export class AuthController {
         res,
         accessToken,
         refreshToken,
-      }).redirect(`${config.APP_ORIGIN}/dashboard`);
+      }).redirect(`${config.APP_ORIGIN}/home`);
     }
   );
 
