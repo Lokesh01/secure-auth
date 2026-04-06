@@ -8,6 +8,7 @@ An advanced authentication system built from scratch using modern technologies w
 ## ✨ Features
 
 - **JWT Authentication** - Secure access & refresh token flow with HTTP-only cookies
+- **OAuth 2.0** - Google and GitHub login with account auto-linking
 - **Email Verification** - Account verification via email with verification codes
 - **Two-Factor Authentication (2FA)** - TOTP-based MFA using authenticator apps
 - **Password Recovery** - Secure forgot/reset password flow
@@ -17,14 +18,14 @@ An advanced authentication system built from scratch using modern technologies w
 ## 🛠️ Tech Stack
 
 | Frontend | Backend |
-|----------|----------|
+|----------|---------|
 | Next.js 14 | Node.js |
 | React 18 | Express.js |
 | TypeScript | TypeScript |
 | TailwindCSS | MongoDB |
 | React Query | Mongoose |
 | shadcn/ui | JWT (jsonwebtoken) |
-| React Hook Form | Passport.js |
+| React Hook Form | Passport.js (JWT + OAuth 2.0) |
 | Zod | Speakeasy (TOTP) |
 | | Nodemailer + Brevo (Email) |
 | | Winston (Logging) |
@@ -46,63 +47,93 @@ secure-auth/
 - **Node.js 21.0.0** (required)
 - MongoDB instance
 - Brevo account (for production emails)
+- Google OAuth credentials (for Google login)
+- GitHub OAuth credentials (for GitHub login)
 
 ### Installation
 
-1. **Clone the repository**
+**1. Clone the repository**
 
 ```bash
-   git clone https://github.com/yourusername/secure-auth.git
-   cd secure-auth
+git clone https://github.com/Lokesh01/secure-auth.git
+cd secure-auth
 ```
 
-1. **Install dependencies**
+**2. Install dependencies**
 
 ```bash
-   npm install
+npm install
 ```
 
-1. **Set up environment variables**
+**3. Set up environment variables**
 
 ```bash
-   # Server
-   cp server/.env.example server/.env
-   # Edit server/.env with your configuration
-   
-   # Client
-   cp client/.env.example client/.env
-   # Edit client/.env with your configuration
+# Server
+cp server/.env.example server/.env
+# Edit server/.env with your configuration
+
+# Client
+cp client/.env.example client/.env
+# Edit client/.env with your configuration
 ```
 
-1. **Configure email**
-   This project uses Nodemailer with Brevo in production and Ethereal in development.
+**4. Configure email**
 
-   - Sign up at [brevo.com](https://brevo.com)
-   - Go to **Settings** → **SMTP & API** → **API Keys** and generate an API key
-   - Go to **Settings** → **Senders & IP** → **Senders** and verify your email address
-   - Add the following to your `server/.env`:
+This project uses Nodemailer with Brevo in production and Ethereal in development.
+
+- Sign up at [brevo.com](https://brevo.com)
+- Go to **Settings** → **SMTP & API** → **API Keys** and generate an API key
+- Go to **Settings** → **Senders & IP** → **Senders** and verify your email address
+- Add the following to your `server/.env`:
 
 ```env
-   SMTP_USER=your@gmail.com
-   BREVO_API_KEY=your_brevo_api_key
-   BREVO_SENDER_EMAIL=your@gmail.com
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=your@gmail.com
 ```
 
-   > In development, emails are intercepted by **Ethereal** (a fake SMTP service). Check your terminal for a preview URL after triggering any email flow.
+> In development, emails are intercepted by **Ethereal** automatically — no setup needed. Check your terminal for a preview URL after triggering any email flow.
 
-1. **Start development servers**
+**5. Configure OAuth**
+
+**Google:**
+
+- Go to [console.cloud.google.com](https://console.cloud.google.com)
+- Create a project → Enable Google OAuth API
+- Go to **APIs & Services** → **Credentials** → **Create OAuth Client ID**
+- Add authorized redirect URI: `http://localhost:8000/api/v1/auth/google/callback`
+- Add to your `server/.env`:
+
+```env
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+```
+
+**GitHub:**
+
+- Go to [github.com/settings/developers](https://github.com/settings/developers)
+- Click **OAuth Apps** → **New OAuth App**
+- Set callback URL: `http://localhost:8000/api/v1/auth/github/callback`
+- Add to your `server/.env`:
+
+```env
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+```
+
+**6. Start development servers**
 
 ```bash
-   # Terminal 1 - Start backend
-   cd server && npm run dev
-   
-   # Terminal 2 - Start frontend
-   cd client && npm run dev
+# Terminal 1 - Start backend
+cd server && npm run dev
+
+# Terminal 2 - Start frontend
+cd client && npm run dev
 ```
 
-1. **Open the application**
-   - Frontend: <http://localhost:3000>
-   - Backend: <http://localhost:8000>
+**7. Open the application**
+
+- Frontend: <http://localhost:3000>
+- Backend: <http://localhost:8000>
 
 ## 📸 Screenshots
 
@@ -124,7 +155,7 @@ secure-auth/
 
 ## 🌐 Live Demo
 
-- **Frontend**: [https://secure-auth-frontend-06jf.onrender.com](https://secure-auth-frontend-06jf.onrender.com)
+- **Frontend**: [https://secure-auth-client-beryl.vercel.app](https://secure-auth-client-beryl.vercel.app)
 - **Backend API**: [https://secure-auth-9chv.onrender.com](https://secure-auth-9chv.onrender.com)
 
 ## 📚 Documentation

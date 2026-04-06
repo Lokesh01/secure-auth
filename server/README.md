@@ -6,8 +6,6 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 
 **Base URL**: `https://secure-auth-9chv.onrender.com/api/v1`
 
-<!-- Replace with your actual deployed URL -->
-
 > **Note**: The API is deployed on Render's free tier, so it may take a few seconds to wake up on first request.
 
 ## 🛠️ Tech Stack
@@ -23,8 +21,10 @@ The backend API for Secure Auth, built with Express.js, TypeScript, and MongoDB.
 ### Authentication & Security
 
 - **jsonwebtoken** - JWT token generation & verification
-- **Passport.js** - Authentication middleware
+- **Passport.js** - Authentication middleware (JWT + OAuth 2.0)
 - **passport-jwt** - JWT strategy for Passport
+- **passport-google-oauth20** - Google OAuth 2.0 strategy
+- **passport-github2** - GitHub OAuth 2.0 strategy
 - **bcrypt** - Password hashing
 - **speakeasy** - TOTP generation for 2FA
 - **qrcode** - QR code generation for MFA setup
@@ -64,7 +64,7 @@ server/
 │   │   ├── validators/            # Zod schemas
 │   │   ├── enums/                 # TypeScript enums
 │   │   ├── interface/             # TypeScript interfaces
-│   │   └── strategies/            # Passport strategies
+│   │   └── strategies/            # Passport strategies (JWT, Google, GitHub)
 │   ├── middlewares/
 │   │   ├── asyncHandler.ts        # Async error wrapper
 │   │   ├── errorHandler.ts        # Global error handler
@@ -79,44 +79,58 @@ server/
 
 - Node.js 21.0.0
 - MongoDB instance
-- Brevo account
+- Brevo account (for production emails)
+- Google OAuth credentials (for Google login)
+- GitHub OAuth credentials (for GitHub login)
 
 ### Installation
 
-1. **Install dependencies**
+**1. Install dependencies**
 
 ```bash
-   npm install
+npm install
 ```
 
-2. **Configure environment**
+**2. Configure environment**
 
 ```bash
-   cp .env.example .env
+cp .env.example .env
 ```
 
-   Update `.env` with your values:
+Update `.env` with your values:
 
 ```env
-   PORT=8000
-   NODE_ENV=development
-   MONGO_URI=mongodb+srv://...
-   APP_ORIGIN=http://localhost:3000
-   JWT_SECRET=your_jwt_secret
-   JWT_EXPIRES_IN=15m
-   JWT_REFRESH_SECRET=your_refresh_secret
-   JWT_REFRESH_EXPIRES_IN=30d
-   SMTP_USER=your@gmail.com
-   BREVO_API_KEY=your_brevo_api_key
-   BREVO_SENDER_EMAIL=your@gmail.com
+PORT=8000
+NODE_ENV=development
+MONGO_URI=mongodb+srv://...
+APP_ORIGIN=http://localhost:3000
+API_URL=http://localhost:8000
+
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=your_refresh_secret
+JWT_REFRESH_EXPIRES_IN=30d
+
+BREVO_API_KEY=your_brevo_api_key
+BREVO_SENDER_EMAIL=your@gmail.com
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+GITHUB_CLIENT_ID=your_dev_github_client_id
+GITHUB_CLIENT_SECRET=your_dev_github_client_secret
+GITHUB_CLIENT_ID_PROD=your_prod_github_client_id
+GITHUB_CLIENT_SECRET_PROD=your_prod_github_client_secret
 ```
 
-   > **Development**: Emails are intercepted by Ethereal (no real emails sent). Check your terminal for a preview URL after any email flow.
+> **Email**: In development, emails are intercepted by Ethereal (no real emails sent). Check your terminal for a preview URL after any email flow.
 
-3. **Start development server**
+> **OAuth**: For Google, add `http://localhost:8000/api/v1/auth/google/callback` as an authorized redirect URI in Google Cloud Console. For GitHub, create two separate OAuth apps — one for development and one for production — since GitHub only supports one callback URL per app.
+
+**3. Start development server**
 
 ```bash
-   npm run dev
+npm run dev
 ```
 
 ## 📜 Available Scripts
@@ -241,6 +255,15 @@ POST /api/v1/auth/login
 }
 ```
 
+**Response** `400 Bad Request` (OAuth user tries email/password login)
+
+```json
+{
+  "message": "This account was created using google. Please login with google instead.",
+  "errorCode": "AUTH_WRONG_PROVIDER"
+}
+```
+
 > Cookies `accessToken` and `refreshToken` are set on successful login (when MFA is disabled).
 
 ---
@@ -329,6 +352,15 @@ POST /api/v1/auth/password/forgot
 }
 ```
 
+**Response** `400 Bad Request` (OAuth user)
+
+```json
+{
+  "message": "This account uses google to login. Password reset is not available.",
+  "errorCode": "AUTH_WRONG_PROVIDER"
+}
+```
+
 ---
 
 #### Reset Password
@@ -353,6 +385,48 @@ POST /api/v1/auth/password/reset
   "message": "Reset Password successfully"
 }
 ```
+
+---
+
+### 🌐 OAuth Endpoints
+
+#### Initiate Google Login
+
+```http
+GET /api/v1/auth/google
+```
+
+Redirects to Google consent screen. No request body needed.
+
+---
+
+#### Google OAuth Callback
+
+```http
+GET /api/v1/auth/google/callback
+```
+
+Handled automatically by Passport. On success, sets cookies and redirects to frontend `/home`. On failure, redirects to frontend `/login?error=oauth_failed`.
+
+---
+
+#### Initiate GitHub Login
+
+```http
+GET /api/v1/auth/github
+```
+
+Redirects to GitHub consent screen. No request body needed.
+
+---
+
+#### GitHub OAuth Callback
+
+```http
+GET /api/v1/auth/github/callback
+```
+
+Handled automatically by Passport. On success, sets cookies and redirects to frontend `/home`. On failure, redirects to frontend `/login?error=oauth_failed`.
 
 ---
 
@@ -545,6 +619,8 @@ DELETE /api/v1/session/:id
 }
 ```
 
+> Deleting a session immediately invalidates the associated refresh token.
+
 ---
 
 ## Error Responses
@@ -560,9 +636,10 @@ All errors follow this format:
 
 ### Common HTTP Status Codes
 
-- `400` - Bad Request (validation errors)
+- `400` - Bad Request (validation errors, wrong auth provider)
 - `401` - Unauthorized (invalid/missing token)
 - `404` - Not Found
+- `429` - Too Many Requests (rate limiting)
 - `500` - Internal Server Error
 
 ---
@@ -574,6 +651,10 @@ All errors follow this format:
 3. For authenticated endpoints, make sure to:
    - First login to get the cookies
    - Enable "Include cookies" in Postman settings
+4. For OAuth endpoints
+
+- OAuth flows require a real browser — open the URL directly: <http://localhost:8000/api/v1/auth/google>
+<http://localhost:8000/api/v1/auth/github>
 
 ### Postman Tips
 

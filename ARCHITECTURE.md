@@ -1,4 +1,4 @@
-# WARP.md - Secure Auth Application Flow Guide
+# Architecture.md - Secure Auth Application Flow Guide
 
 This comprehensive guide covers the entire authentication system flow from top to bottom. Perfect for interview revision.
 
@@ -9,14 +9,15 @@ This comprehensive guide covers the entire authentication system flow from top t
 1. [Architecture Overview](#architecture-overview)
 2. [Database Models](#database-models)
 3. [Authentication Flow](#authentication-flow)
-4. [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
-5. [Session Management](#session-management)
-6. [Password Management](#password-management)
-7. [Token Management](#token-management)
-8. [Security Features](#security-features)
-9. [API Endpoints Summary](#api-endpoints-summary)
-10. [Frontend Architecture](#frontend-architecture)
-11. [Key Interview Points](#key-interview-points)
+4. [OAuth Authentication](#oauth-authentication)
+5. [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
+6. [Session Management](#session-management)
+7. [Password Management](#password-management)
+8. [Token Management](#token-management)
+9. [Security Features](#security-features)
+10. [API Endpoints Summary](#api-endpoints-summary)
+11. [Frontend Architecture](#frontend-architecture)
+12. [Key Interview Points](#key-interview-points)
 
 ---
 
@@ -26,7 +27,7 @@ This comprehensive guide covers the entire authentication system flow from top t
 
 - **Backend**: Node.js, Express, TypeScript, MongoDB (Mongoose)
 - **Frontend**: Next.js 14 (App Router), React, TanStack Query
-- **Authentication**: JWT (Access + Refresh tokens), TOTP for MFA
+- **Authentication**: JWT (Access + Refresh tokens), TOTP for MFA, OAuth 2.0 (Google + GitHub)
 - **Email**: Nodemailer (Brevo in production, Ethereal in development)
 - **Password Hashing**: bcrypt
 
@@ -57,14 +58,18 @@ secure-auth/
 
 ```typescript
 {
-  name: string;           // Required
-  email: string;         // Required, Unique
-  password: string;      // Hashed with bcrypt
-  isEmailVerified: boolean;  // Default: false
+  name: string;                    // Required
+  email: string;                   // Required, Unique
+  password?: string;               // Optional — null for OAuth users
+  googleId?: string;               // Google OAuth ID
+  githubId?: string;               // GitHub OAuth ID
+  avatar?: string;                 // Profile picture from OAuth provider
+  authProvider: 'local' | 'google' | 'github';  // How user signed up
+  isEmailVerified: boolean;        // Always true for OAuth users
   userPreferences: {
-    enable2FA: boolean;              // Default: false
-    emailNotifications: boolean;    // Default: true
-    twoFactorSecret?: string;        // TOTP secret (hidden in responses)
+    enable2FA: boolean;            // Default: false
+    emailNotifications: boolean;  // Default: true
+    twoFactorSecret?: string;      // TOTP secret (hidden in responses)
   }
   createdAt: Date;
   updatedAt: Date;
@@ -73,9 +78,11 @@ secure-auth/
 
 **Key Features:**
 
-- Password hashing via Mongoose pre-save hook
+- Password hashing via Mongoose pre-save hook (only runs if password exists)
 - `comparePassword()` method for authentication
 - `toJSON` transform removes sensitive fields (password, 2FA secret)
+- OAuth users have no password — `authProvider` tracks how they signed up
+- `isEmailVerified` automatically true for OAuth users (provider already verified)
 
 ### Session Model (`server/src/database/models/session.model.ts`)
 
@@ -93,6 +100,9 @@ secure-auth/
 - Tracks user sessions across devices
 - Enables session revocation
 - Supports multiple concurrent sessions per user
+- Deleting session revokes the associated refresh token
+
+**Note:** Deleting a session immediately invalidates the associated refresh token since refresh token validation requires a DB session lookup.
 
 ### Verification Model (`server/src/database/models/verification.model.ts`)
 
@@ -114,13 +124,19 @@ secure-auth/
 
 ```
 User fills form → Validate input (Zod) → Check if user exists
-    ↓
+↓
+Start MongoDB transaction
+↓
 Create user (password hashed automatically via pre-save hook)
-    ↓
+↓
 Generate verification code (UUID)
-    ↓
+↓
 Send verification email via Nodemailer
-    ↓
+↓
+If email fails → abortTransaction() → rollback user + verification code
+↓
+If email succeeds → commitTransaction()
+↓
 Return success response (201)
 ```
 
@@ -129,6 +145,7 @@ Return success response (201)
 - Password is hashed before saving (Mongoose pre-save middleware)
 - Verification code expires in 45 minutes
 - Email verification is mandatory before full account access
+- MongoDB transaction ensures no partial writes if email fails
 - In production, emails are sent via Brevo SMTP API
 - In development, emails are intercepted by Ethereal (check terminal for preview URL)
 
@@ -168,17 +185,19 @@ Response: { "message": "Email verified successfully" }
 
 ```
 User enters email + password
-    ↓
+↓
 Find user by email
-    ↓
+↓
+Check if user signed up with OAuth → return helpful error if true
+↓
 Compare password (bcrypt)
-    ↓
+↓
 Create session in MongoDB
-    ↓
+↓
 Generate JWT access token (15 min) + refresh token (30 days)
-    ↓
+↓
 Set HTTP-only cookies (accessToken, refreshToken)
-    ↓
+↓
 Return user data + success message
 ```
 
@@ -196,21 +215,21 @@ Cookies: accessToken (15 min), refreshToken (30 days)
 
 ```
 User enters email + password
-    ↓
+↓
 Find user and validate password
-    ↓
+↓
 Check user.userPreferences.enable2FA === true
-    ↓
+↓
 Return MFA required response (WITHOUT setting tokens)
-    ↓
+↓
 User redirected to MFA verification page
-    ↓
+↓
 User enters TOTP code from authenticator app
-    ↓
+↓
 Verify code against stored secret (speakeasy)
-    ↓
+↓
 Create session + Generate tokens
-    ↓
+↓
 Set cookies + Return user data
 ```
 
@@ -218,6 +237,7 @@ Set cookies + Return user data
 
 - Access tokens are NOT set until MFA is verified
 - This prevents unauthorized access even if password is compromised
+- MFA works for both local and OAuth users
 
 ---
 
@@ -267,6 +287,160 @@ Return new accessToken (and new refreshToken if rotated)
 - Refresh token: 30 days expiry
 - Token rotation: New refresh token issued if current one expires within 24h
 - Session auto-extends on refresh
+
+---
+
+## OAuth Authentication
+
+### OAuth 2.0 Overview
+
+This app implements **OAuth 2.0 Authorization Code Flow** with **OpenID Connect (OIDC)** for Google and GitHub login.
+
+OAuth 2.0 roles in this app:
+Resource Owner     → the user (person logging in)
+Client             → Secure Auth (your Express backend)
+Authorization Server → Google/GitHub (handles login + issues tokens)
+Resource Server    → Google/GitHub API (holds user profile data)
+
+### 1. Google/GitHub Login Flow
+
+```
+User clicks "Login with Google/GitHub"
+↓
+GET /api/v1/auth/google (or /github)
+↓
+Passport builds OAuth redirect URL with:
+
+client_id
+redirect_uri
+scope (profile, email)
+state (random CSRF token)
+response_type=code
+↓
+Browser redirects to Google/GitHub consent screen
+↓
+User approves
+↓
+Google/GitHub redirects to callback with auth code + state
+↓
+GET /api/v1/auth/google/callback
+↓
+Passport verifies state (CSRF check)
+↓
+Passport exchanges auth code for access token (server side)
+↓
+Passport fetches user profile from Google/GitHub API
+↓
+Your strategy callback fires with profile
+↓
+Find or create user in MongoDB
+↓
+oauthCallback controller fires
+↓
+oauthLogin service creates session + signs JWT tokens
+↓
+setAuthenticationCookies sets httpOnly cookies
+↓
+Redirect to frontend /home ✅
+```
+
+### 2. Find or Create User Logic (Strategy Callback)
+
+```
+Strategy receives profile from Google/GitHub
+↓
+Step 1: Search by googleId/githubId first
+(handles email change case)
+↓
+Found → return existing user ✅
+Step 2: Search by email
+(auto-link case — user already has local account)
+↓
+Found → link OAuth ID to existing account
+update avatar if not set
+set isEmailVerified = true
+save → return user ✅
+Step 3: No user found anywhere
+↓
+Create new user:
+
+name, email, avatar from OAuth profile
+googleId/githubId set
+authProvider: 'google' or 'github'
+isEmailVerified: true (provider already verified)
+password: null
+↓
+Return new user ✅
+```
+
+### 3. OAuth Edge Cases Handled
+
+**OAuth user tries email/password login:**
+```
+user.password === null
+↓
+throw BadRequestException:
+"This account was created using Google/GitHub.
+Please login with Google/GitHub instead."
+errorCode: AUTH_WRONG_PROVIDER
+```
+
+**Same email exists on OAuth signup (auto-link):**
+```
+User has local account with <lokesh@gmail.com>
+Tries "Login with Google" using same email
+↓
+Strategy finds user by email
+Links googleId to existing account
+User can now login with BOTH email/password AND Google ✅
+```
+
+**OAuth user tries forgot password:**
+```
+user.authProvider !== 'local'
+↓
+throw BadRequestException:
+"This account uses Google/GitHub to login.
+Password reset is not available."
+errorCode: AUTH_WRONG_PROVIDER
+```
+
+**GitHub email is private/null:**
+```
+profile.emails?.[0]?.value === undefined
+↓
+return done(null, false, {
+message: 'Please make your GitHub email public to continue'
+})
+↓
+failureRedirect → /login?error=oauth_failed
+```
+
+**User changes their OAuth email:**
+```
+Strategy searches by googleId/githubId FIRST
+↓
+Found by ID even if email changed ✅
+Email change doesn't create duplicate account
+```
+
+**OAuth provider is down:**
+```
+passport.authenticate failureRedirect fires
+↓
+Redirect to /login?error=oauth_failed
+↓
+Frontend shows error message to user
+```
+
+### 4. OAuth API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/auth/google` | Initiate Google OAuth |
+| GET | `/api/v1/auth/google/callback` | Google OAuth callback |
+| GET | `/api/v1/auth/github` | Initiate GitHub OAuth |
+| GET | `/api/v1/auth/github/callback` | GitHub OAuth callback |
 
 ---
 
@@ -420,17 +594,21 @@ Return success
 
 ```
 User enters email → Click "Forgot Password"
-    ↓
+↓
 Call POST /api/v1/auth/password/forgot
-    ↓
-Find user by email (silently - don't reveal if user exists)
-    ↓
+↓
+Find user by email
+↓
+Check if user signed up with OAuth → return error if true
+↓
 Check rate limit: max 3 requests per 10 minutes
-    ↓
+↓
 Generate verification code (1 hour expiry)
-    ↓
+↓
 Send password reset email via Nodemailer
-    ↓
+↓
+If email fails → delete verification code (rollback)
+↓
 Return success (always - to prevent email enumeration)
 ```
 
@@ -511,17 +689,17 @@ Response: { "message": "Reset Password successfully" }
 // Access Token Cookie
 {
   httpOnly: true,
-  secure: true (production),
-  sameSite: 'lax',
-  maxAge: 15 * 60 * 1000  // 15 minutes
+  secure: true,
+  sameSite: 'none',    // required for cross-origin (Vercel + Render)
+  maxAge: 15 * 60 * 1000
 }
 
 // Refresh Token Cookie
 {
   httpOnly: true,
-  secure: true (production),
-  sameSite: 'lax',
-  maxAge: 30 * 24 * 60 * 60 * 1000  // 30 days
+  secure: true,
+  sameSite: 'none',
+  maxAge: 30 * 24 * 60 * 60 * 1000
 }
 ```
 
@@ -556,6 +734,27 @@ Response: { "message": "Reset Password successfully" }
        │<──────────────────────│                       │
        │                       │                       │
 ```
+
+### How Deleting Session Revokes Refresh Token
+
+```
+refreshToken JWT contains sessionId: "abc123"
+↓
+User deletes session "abc123" from MongoDB
+↓
+Hacker tries to use refreshToken
+↓
+Server verifies JWT signature ✅ (still cryptographically valid)
+↓
+Server looks up sessionId "abc123" in MongoDB
+↓
+session = null (deleted)
+↓
+throw UnauthorizedException('Session does not exist') ✅
+↓
+Hacker cannot get new accessTokens ✅
+```
+This is why storing sessions in MongoDB matters — it makes refresh tokens revocable even though they are JWTs.
 
 ---
 
@@ -605,6 +804,14 @@ Response: { "message": "Reset Password successfully" }
 - CORS configured with credentials support
 - Environment-based configurations
 
+### 8. OAuth Security
+
+- **Authorization Code Flow** — auth code exchanged server-side, client_secret never exposed
+- **State parameter** — prevents CSRF attacks during OAuth flow
+- **session: false** — Passport does not use its own session system
+- **Provider ID first** — searches by googleId/githubId before email to handle email changes
+- **failureRedirect** — graceful handling when OAuth provider is down
+
 ---
 
 ## API Endpoints Summary
@@ -619,6 +826,10 @@ Response: { "message": "Reset Password successfully" }
 | POST | `/api/v1/auth/password/forgot` | Request password reset |
 | POST | `/api/v1/auth/password/reset` | Reset password |
 | GET | `/api/v1/auth/refresh` | Refresh access token |
+| GET | `/api/v1/auth/google` | Initiate Google OAuth |
+| GET | `/api/v1/auth/google/callback` | Google OAuth callback |
+| GET | `/api/v1/auth/github` | Initiate GitHub OAuth |
+| GET | `/api/v1/auth/github/callback` | GitHub OAuth callback |
 
 ### Auth Endpoints (Auth Required)
 
@@ -674,7 +885,8 @@ Response: { "message": "Reset Password successfully" }
 ```typescript
 // Axios instance with interceptors
 // Automatic cookie handling
-// Request/response transformations
+// withCredentials: true for cross-origin cookies
+// Auto-refresh on 401 AUTH_TOKEN_NOT_FOUND
 ```
 
 #### Custom Hooks
@@ -709,6 +921,22 @@ client/app/
 4. **User Loading**: Show loading skeleton
 5. **User Loaded**: Show protected content
 6. **Token Expired**: Auto-refresh via interceptor
+
+### OAuth Frontend Flow
+
+```
+User clicks "Login with Google/GitHub" button
+       ↓
+window.location.href = `${API_URL}/auth/google`
+       ↓
+Full browser redirect (not axios — OAuth requires real redirect)
+       ↓
+Google/GitHub handles auth
+       ↓
+Backend sets cookies + redirects to /home
+       ↓
+Frontend useAuth fires → user loaded ✅
+```
 
 ---
 
@@ -786,6 +1014,47 @@ abortTransaction() automatically rolls back both the user and verification
 code creation. In the forgotPassword flow we manually delete the verification
 code if the email fails since only one document is involved and a full
 transaction would be unnecessary overhead
+
+**Q: How does deleting a session revoke the refresh token?**
+A: The refresh token JWT contains a sessionId. Every call to /auth/refresh looks up that sessionId in MongoDB. If the session is deleted, the lookup returns null and the request is rejected. The JWT itself is still cryptographically valid but is useless without the corresponding DB session.
+
+### 12. What is OAuth 2.0 and how did you implement it?
+
+- OAuth 2.0 is an authorization framework that allows users to grant apps
+  limited access to their accounts on other services without sharing passwords
+- Implemented Authorization Code Flow — the most secure flow where the
+  auth code is exchanged server-side using the client secret
+- Used OpenID Connect (OIDC) on top of OAuth 2.0 to get user identity
+  (name, email, avatar) via the id_token
+- Passport.js abstracts the OAuth handshake — your strategy callback just
+  receives the final user profile
+- Your own JWT session system sits on top — OAuth just verifies identity,
+  your app manages its own sessions
+
+### 13. What OAuth edge cases did you handle?
+
+- **OAuth user tries email/password login**: Detected via null password, returns provider-specific error
+- **Same email on OAuth signup**: Auto-links OAuth provider to existing account
+- **OAuth user tries forgot password**: Blocked with helpful error message
+- **GitHub private email**: Returns error asking user to make email public
+- **User changes OAuth email**: Strategy searches by provider ID first, not email
+- **OAuth provider down**: failureRedirect sends user to login with error query param
+
+### 14. What is the difference between OAuth 2.0 and OpenID Connect?
+
+- OAuth 2.0 is about authorization — "what can this app do on your behalf"
+- OpenID Connect (OIDC) is about authentication — "who is this user"
+- OIDC is a layer on top of OAuth 2.0 that adds an id_token (JWT) containing user info
+- When you use "Login with Google" you are using OIDC, not just OAuth 2.0
+- The scope: ['profile', 'email'] you pass is an OIDC scope
+
+### 15. Why session: false in Passport OAuth strategies?
+
+- By default Passport tries to serialize/deserialize user into HTTP session
+- Your app has its own session system (MongoDB + JWT cookies)
+- session: false tells Passport to skip its built-in session management entirely
+- Without it you'd get "Failed to serialize user into session" error since
+  serializeUser() was never defined
 
 ---
 
@@ -931,12 +1200,20 @@ JWT_REFRESH_EXPIRES_IN=30d
 SMTP_USER=your@gmail.com
 BREVO_API_KEY=your_brevo_api_key
 BREVO_SENDER_EMAIL=your@gmail.com
+
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+GITHUB_CLIENT_ID=your_dev_github_client_id
+GITHUB_CLIENT_SECRET=your_dev_github_client_secret
+GITHUB_CLIENT_ID_PROD=your_prod_github_client_id
+GITHUB_CLIENT_SECRET_PROD=your_prod_github_client_secret
 ```
 
 ### Client (.env)
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+NEXT_PUBLIC_API_BASE_URL=http://localhost:8000/api/v1
 ```
 
 ---
@@ -983,7 +1260,7 @@ A: While we don't have explicit rate limiting on login, we use secure password h
 A: MFA requires something you know (password) plus something you have (authenticator app). Even if a password is compromised, attackers cannot access the account without the TOTP code.
 
 **Q: What happens when a user forgets their password?**
-A: We send a password reset email with a unique verification code. The code expires in 1 hour and can only be used once. Upon password reset, we invalidate all existing sessions for security.
+A: We send a password reset email with a unique verification code. The code expires in 1 hour and can only be used once. Upon password reset, we invalidate all existing sessions for security. OAuth users are blocked from this flow since they have no password.
 
 **Q: How do you handle sessions across multiple devices?**
 A: Each login creates a new session in MongoDB. Users can view and manage all their sessions from the sessions page, including revoking sessions from other devices.
@@ -1002,7 +1279,13 @@ Render block outbound SMTP ports. This approach keeps the sendEmail interface
 consistent across environments while swapping only the underlying transport,
 meaning no application code changes are needed when switching email providers.
 
+**Q: If a hacker gets the access token can they stay logged in forever?**
+A: No. The access token expires in 15 minutes and the hacker cannot refresh it because the refresh token is stored in an httpOnly cookie which JavaScript cannot read. Only the legitimate user's browser can send the refresh token. After 15 minutes the hacker is locked out automatically.
+
+**Q: How did you implement OAuth and what edge cases did you handle?**
+A: Implemented OAuth 2.0 Authorization Code Flow with OpenID Connect for Google and GitHub using Passport.js. Edge cases handled include: OAuth users trying email/password login (detected via null password), same email existing on OAuth signup (auto-linked to existing account), OAuth users trying forgot password (blocked with helpful error), GitHub private email (user prompted to make email public), user changing their OAuth email (search by provider ID first not email), and OAuth provider being down (graceful failureRedirect).
+
 ---
 
-*Last Updated: February 2026*
-*For Secure Auth v1.0*
+*Last Updated: April 2026*
+*For Secure Auth v2.0*
