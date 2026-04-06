@@ -19,6 +19,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '#common/utils/catch-errors';
+import { config } from '../../config/app.config';
 
 export class AuthController {
   private authService: AuthService;
@@ -70,6 +71,28 @@ export class AuthController {
           user,
           mfaRequired,
         });
+    }
+  );
+
+  public oAuthCallback = asyncHandler(
+    async (req: Request, res: Response): Promise<any> => {
+      const userAgent = req.headers['user-agent'];
+      const user = req.user as any; //set by passport strategy
+
+      if (!user) {
+        return res.redirect(`${config.APP_ORIGIN}/login?error=oauth_failed`);
+      }
+
+      const { accessToken, refreshToken } = await this.authService.oAuthLogin(
+        user._id.toString(),
+        userAgent
+      );
+
+      return setAuthenticationCookies({
+        res,
+        accessToken,
+        refreshToken,
+      }).redirect(`${config.APP_ORIGIN}/home`);
     }
   );
 

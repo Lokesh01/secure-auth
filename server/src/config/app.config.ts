@@ -12,6 +12,7 @@ const appConfig = () => ({
   NODE_ENV: getEnv('NODE_ENV', 'development'),
   APP_ORIGIN: getEnv('APP_ORIGIN', 'localhost'),
   PORT: getEnv('PORT', '5000'),
+  BASE_API_URL: getEnv('BASE_URL', 'http://localhost:8000'),
   BASE_PATH: getEnv('BASE_PATH', '/api/v1'),
   MONGO_URI: getEnv('MONGO_URI'),
   JWT: {
@@ -24,6 +25,12 @@ const appConfig = () => ({
   BREVO_API_KEY: getEnv('BREVO_API_KEY'),
   BREVO_SENDER_EMAIL: getEnv('BREVO_SENDER_EMAIL', 'negi.lokesh347@gmail.com'),
   SMTP_USER: getEnv('SMTP_USER'),
+  GOOGLE_CLIENT_ID: getEnv('GOOGLE_CLIENT_ID'),
+  GOOGLE_CLIENT_SECRET: getEnv('GOOGLE_CLIENT_SECRET'),
+  GITHUB_CLIENT_ID: getEnv('GITHUB_CLIENT_ID'),
+  GITHUB_CLIENT_SECRET: getEnv('GITHUB_CLIENT_SECRET'),
+  GITHUB_CLIENT_ID_PROD: getEnv('GITHUB_CLIENT_ID_PROD'),
+  GITHUB_CLIENT_SECRET_PROD: getEnv('GITHUB_CLIENT_SECRET_PROD'),
 });
 
 export const config = appConfig();

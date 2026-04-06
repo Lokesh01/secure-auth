@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import { loginMutationFn } from '../../lib/api';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { githubOAuthFn, googleOAuthFn, loginMutationFn } from '../../lib/api';
 import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,9 +20,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Loader } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
+import { FaGithub } from 'react-icons/fa';
+import { useEffect } from 'react';
 
 export default function Login() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { mutate, isPending } = useMutation({
     mutationFn: loginMutationFn,
     retry: false,
@@ -30,6 +35,18 @@ export default function Login() {
       form.reset();
     },
   });
+
+  // show error toast if OAuth failed
+  useEffect(() => {
+    if (searchParams.get('error') === 'oauth_failed') {
+      toast({
+        title: 'OAuth Login Failed',
+        description:
+          'Login with Google or GitHub failed. Please try again or use email and password.',
+        variant: 'destructive',
+      });
+    }
+  }, [searchParams]);
 
   const formSchema = z.object({
     email: z.email().min(1, {
@@ -165,9 +182,28 @@ export default function Login() {
             </div>
           </form>
         </Form>
-        <Button variant="outline" className="w-full h-[40px]">
-          Email magic link
-        </Button>
+
+        {/* OAuth Buttons */}
+        <div className="flex flex-col gap-3">
+          <Button
+            variant="outline"
+            className="w-full h-[40px] flex items-center gap-2"
+            onClick={googleOAuthFn}
+          >
+            <FcGoogle className="size-5" />
+            Continue with Google
+          </Button>
+
+          <Button
+            variant="outline"
+            className="w-full h-[40px] flex items-center gap-2"
+            onClick={githubOAuthFn}
+          >
+            <FaGithub className="size-5" />
+            Continue with GitHub
+          </Button>
+        </div>
+
         <p className="text-xs dark:text-slate- font-normal mt-7">
           By signing in, you agree to our{' '}
           <a className="text-primary hover:underline" href="#">

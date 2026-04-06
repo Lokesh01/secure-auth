@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Logo from '@/components/logo';
 import { useMutation } from '@tanstack/react-query';
 import { z } from 'zod';
-import { registerMutationFn } from '@/lib/api';
+import { githubOAuthFn, googleOAuthFn, registerMutationFn } from '@/lib/api';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +20,8 @@ import {
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
 import { ArrowRight, Loader, MailCheckIcon } from 'lucide-react';
+import { FcGoogle } from 'react-icons/fc';
+import { FaGithub } from 'react-icons/fa';
 
 const SignupPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -76,6 +78,7 @@ const SignupPage = () => {
       },
     });
   };
+
   return (
     <main className="w-full min-h-[590px] h-auto max-w-full pt-10">
       {!isSubmitted ? (
@@ -215,9 +218,27 @@ const SignupPage = () => {
             </form>
           </Form>
 
-          <Button variant={'outline'} className="w-full h-[40px]">
-            Email magic link
-          </Button>
+          {/* OAuth Buttons */}
+          <div className="flex flex-col gap-3">
+            <Button
+              variant="outline"
+              className="w-full h-[40px] flex items-center gap-2"
+              onClick={googleOAuthFn}
+            >
+              <FcGoogle className="size-5" />
+              Continue with Google
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full h-[40px] flex items-center gap-2"
+              onClick={githubOAuthFn}
+            >
+              <FaGithub className="size-5" />
+              Continue with GitHub
+            </Button>
+          </div>
+
           <p className="text-xs font-normal mt-4">
             By Signing up, you agree to our{' '}
             <a className="text-primary hover:underline" href="#">

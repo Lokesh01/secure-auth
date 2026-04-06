@@ -10,7 +10,11 @@ interface UserPreferences {
 export interface UserDocument extends Document {
   name: string;
   email: string;
-  password: string;
+  password?: string;
+  googleId?: string;
+  githubId?: string;
+  avatar?: string;
+  authProvider: 'local' | 'google' | 'github';
   isEmailVerified: boolean;
   userPreferences: UserPreferences;
   createdAt: Date;
@@ -28,15 +32,24 @@ const userSchema = new mongoose.Schema<UserDocument>(
   {
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    password: { type: String, required: false }, //not required for OAuth users
+    googleId: { type: String, default: null },
+    githubId: { type: String, default: null },
+    avatar: { type: String, default: null },
+    authProvider: {
+      type: String,
+      enum: ['local', 'google', 'github'],
+      default: 'local',
+    },
     isEmailVerified: { type: Boolean, default: false },
     userPreferences: { type: userPreferencesSchema, default: () => ({}) },
   },
   { timestamps: true, toJSON: {} } //toJSON:{} constructore to enable custom toJSON method
 );
 
-userSchema.pre('save', async function (this: UserDocument, next) {
-  if (this.isModified('password')) {
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password') && this.password) {
+    // added null check
     this.password = await hashValue(this.password);
   }
   next();

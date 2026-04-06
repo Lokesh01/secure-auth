@@ -75,6 +75,14 @@ export const verifyMFALoginMutationFn = async (data: MFALoginType) =>
 
 export const logoutMutationFn = async () => await API.post('/auth/logout');
 
+export const googleOAuthFn = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/google`;
+};
+
+export const githubOAuthFn = () => {
+  window.location.href = `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/github`;
+};
+
 export const mfaSetupQueryFn = async () => {
   const response = await API.get<MfaType>('/mfa/setup');
   return response.data;
