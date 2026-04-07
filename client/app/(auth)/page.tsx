@@ -1,5 +1,6 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { githubOAuthFn, googleOAuthFn, loginMutationFn } from '../../lib/api';
 import { useMutation } from '@tanstack/react-query';
@@ -24,7 +25,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
 import { useEffect } from 'react';
 
-export default function Login() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -36,7 +37,6 @@ export default function Login() {
     },
   });
 
-  // show error toast if OAuth failed
   useEffect(() => {
     if (searchParams.get('error') === 'oauth_failed') {
       toast({
@@ -217,5 +217,13 @@ export default function Login() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }
