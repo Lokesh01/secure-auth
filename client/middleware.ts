@@ -5,8 +5,8 @@ const publicRoutes = [
   '/',
   '/signup',
   '/confirm-account',
-  'forgot-password',
-  'reset-password',
+  '/forgot-password',
+  '/reset-password',
   '/verify-mfa',
 ];
 
