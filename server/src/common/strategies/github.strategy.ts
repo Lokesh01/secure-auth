@@ -21,7 +21,7 @@ export const setupGithubStrategy = () => {
       {
         clientID: githubClientId,
         clientSecret: githubClientSecret,
-        callbackURL: '/api/v1/auth/github/callback',
+        callbackURL: `${config.BASE_API_URL}/api/v1/auth/github/callback`,
         scope: ['user:email'],
       },
       async (
