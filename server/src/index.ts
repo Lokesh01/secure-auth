@@ -32,8 +32,8 @@ app.use(passport.initialize());
 
 // rate limiters
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // max 10 attempts per window
+  windowMs: config.RATE_LIMIT.AUTH.WINDOW_MS,
+  max: config.RATE_LIMIT.AUTH.MAX_ATTEMPTS, // max 10 attempts per window
   message: {
     message: 'Too many attempts, please try again after 15 minutes',
     errorCode: 'TOO_MANY_REQUESTS',
@@ -44,8 +44,8 @@ const authLimiter = rateLimit({
 });
 
 const registerLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // max 5 registrations per hour per IP
+  windowMs: config.RATE_LIMIT.REGISTER.WINDOW_MS,
+  max: config.RATE_LIMIT.REGISTER.MAX_ATTEMPTS, // max 5 registrations per hour per IP
   message: {
     message: 'Too many accounts created, please try again after an hour',
     errorCode: 'TOO_MANY_REQUESTS',
