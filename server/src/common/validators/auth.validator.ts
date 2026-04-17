@@ -30,7 +30,11 @@ export const registerSchema = z
 
 export const loginSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: z
+    .string()
+    .trim()
+    .min(1, 'Password is required')
+    .max(255, 'Password is too long'),
   userAgent: z.string().optional(),
 });
 
