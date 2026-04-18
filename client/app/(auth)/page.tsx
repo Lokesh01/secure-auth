@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { githubOAuthFn, googleOAuthFn, loginMutationFn } from '../../lib/api';
 import { useMutation } from '@tanstack/react-query';
@@ -20,12 +20,14 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Loader } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
 import { useEffect } from 'react';
+import { loginSchema } from '../../lib/validations/auth.schema';
 
 function LoginContent() {
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -48,24 +50,15 @@ function LoginContent() {
     }
   }, [searchParams]);
 
-  const formSchema = z.object({
-    email: z.email().min(1, {
-      message: 'Email is required',
-    }),
-    password: z.string().trim().min(6, {
-      message: 'Password is required',
-    }),
-  });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof loginSchema>) => {
     mutate(values, {
       onSuccess: response => {
         if (response.data.mfaRequired) {
@@ -133,12 +126,28 @@ function LoginContent() {
                       Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder="********"
-                        {...field}
-                        disabled={isPending}
-                        autoComplete="off"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="********"
+                          {...field}
+                          disabled={isPending}
+                          className="pr-10"
+                          autoComplete="off"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(prev => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        >
+                          {showPassword ? (
+                            <Eye className="size-4" />
+                          ) : (
+                            <EyeOff className="size-4" />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>

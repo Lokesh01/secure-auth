@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express, { NextFunction, Request, Response, urlencoded } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { config } from '#config/app.config';
 import connectDB from './database/database';
 import { errorHandler } from '#middlewares/errorHandler';
@@ -9,8 +11,6 @@ import { asyncHandler } from '#middlewares/asyncHandler';
 import passport from '#middlewares/passport';
 import { HTTP_STATUS } from '#config/http.config';
 import { authenticateJWT } from '#common/strategies/jwt.strategy';
-
-//routes imports
 import authRoutes from './modules/auth/auth.routes';
 import sessionRoutes from './modules/session/session.routes';
 import mfaRoutes from './modules/mfa/mfa.routes';
@@ -20,12 +20,39 @@ import { logger } from './common/utils/logger';
 const app = express();
 const BASE_PATH = config.BASE_PATH;
 
-//middlewares
+// security headers
+app.use(helmet());
+
+// middlewares
 app.use(express.json());
 app.use(urlencoded({ extended: true }));
 app.use(cors({ origin: config.APP_ORIGIN, credentials: true }));
 app.use(cookieParser());
 app.use(passport.initialize());
+
+// rate limiters
+const authLimiter = rateLimit({
+  windowMs: config.RATE_LIMIT.AUTH.WINDOW_MS,
+  max: config.RATE_LIMIT.AUTH.MAX_ATTEMPTS, // max 10 attempts per window
+  message: {
+    message: 'Too many attempts, please try again after 15 minutes',
+    errorCode: 'TOO_MANY_REQUESTS',
+  },
+  standardHeaders: true, // return rate limit info in headers
+  legacyHeaders: false, // disable X-RateLimit headers
+  skipSuccessfulRequests: true, // only count failed attempts
+});
+
+const registerLimiter = rateLimit({
+  windowMs: config.RATE_LIMIT.REGISTER.WINDOW_MS,
+  max: config.RATE_LIMIT.REGISTER.MAX_ATTEMPTS, // max 5 registrations per hour per IP
+  message: {
+    message: 'Too many accounts created, please try again after an hour',
+    errorCode: 'TOO_MANY_REQUESTS',
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 app.get(
   '/',
@@ -34,7 +61,7 @@ app.get(
   })
 );
 
-//health check
+// health check
 app.get('/health', (req, res) => {
   const isUptimeRobot = req.headers['user-agent']?.includes('UptimeRobot');
 
@@ -48,7 +75,9 @@ app.get('/health', (req, res) => {
   });
 });
 
-//routes
+// routes
+app.use(`${BASE_PATH}/auth/login`, authLimiter);
+app.use(`${BASE_PATH}/auth/register`, registerLimiter);
 app.use(`${BASE_PATH}/auth`, authRoutes);
 app.use(`${BASE_PATH}/mfa`, mfaRoutes);
 app.use(`${BASE_PATH}/session`, authenticateJWT, sessionRoutes);
@@ -58,7 +87,7 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await connectDB();
-    await transporterPromise; // verify transporter is ready
+    await transporterPromise;
 
     app.listen(config.PORT, () => {
       console.log(

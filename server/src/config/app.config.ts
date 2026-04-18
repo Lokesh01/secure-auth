@@ -15,6 +15,16 @@ const appConfig = () => ({
   BASE_API_URL: getEnv('BASE_API_URL', 'http://localhost:8000'),
   BASE_PATH: getEnv('BASE_PATH', '/api/v1'),
   MONGO_URI: getEnv('MONGO_URI'),
+  RATE_LIMIT: {
+    AUTH: {
+      WINDOW_MS: 15 * 60 * 1000, // 15 minutes
+      MAX_ATTEMPTS: 2,
+    },
+    REGISTER: {
+      WINDOW_MS: 60 * 60 * 1000, // 1 hour
+      MAX_ATTEMPTS: 5,
+    },
+  },
   JWT: {
     SECRET: getEnv('JWT_SECRET'),
     EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m') as StringValue,

@@ -19,12 +19,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '../../../components/ui/input';
 import { Button } from '../../../components/ui/button';
-import { ArrowRight, Loader, MailCheckIcon } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader, MailCheckIcon } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
+import { registerSchema } from '../../../lib/validations/auth.schema';
+import PasswordStrength from '../../../components/auth/password-strength';
 
 const SignupPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { mutate, isPending } = useMutation({
     mutationFn: registerMutationFn,
     retry: false,
@@ -33,28 +36,8 @@ const SignupPage = () => {
     },
   });
 
-  const formSchema = z
-    .object({
-      name: z.string().trim().min(1, {
-        message: 'Name is required',
-      }),
-      email: z.email().min(1, {
-        message: 'Email is required',
-      }),
-      password: z.string().trim().min(6, {
-        message: 'Password is required',
-      }),
-      confirmPassword: z.string().min(1, {
-        message: 'Confirm Password is required',
-      }),
-    })
-    .refine(val => val.password === val.confirmPassword, {
-      message: 'Password does not match',
-      path: ['confirmPassword'],
-    });
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -62,8 +45,9 @@ const SignupPage = () => {
       confirmPassword: '',
     },
   });
+  const password = form.watch('password');
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = (values: z.infer<typeof registerSchema>) => {
     mutate(values, {
       onSuccess: () => {
         setIsSubmitted(true);
@@ -154,12 +138,30 @@ const SignupPage = () => {
                         Password
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="********"
-                          {...field}
-                          disabled={isPending}
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? 'text' : 'password'}
+                            placeholder="********"
+                            {...field}
+                            disabled={isPending}
+                            className="pr-10"
+                            autoComplete="off"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(prev => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                          >
+                            {showPassword ? (
+                              <Eye className="size-4" />
+                            ) : (
+                              <EyeOff className="size-4" />
+                            )}
+                          </button>
+                        </div>
                       </FormControl>
+                      <PasswordStrength password={password} />
                       <FormMessage />
                     </FormItem>
                   )}
