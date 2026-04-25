@@ -141,6 +141,10 @@ cd client && npm run dev
 
 ![Login](./assets/login.png)
 
+### Outh Screen
+
+![Oauth](./assets/Oauth.png)
+
 ### Dashboard
 
 ![Dashboard](./assets/home.png)
