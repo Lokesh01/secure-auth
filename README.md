@@ -15,6 +15,32 @@ An advanced authentication system built from scratch using modern technologies w
 - **Session Management** - View, manage, and revoke active sessions across devices
 - **Modern UI** - Clean, responsive interface with dark mode support
 
+## 📸 Screenshots
+
+### Signup page
+
+![Signup](./assets/signup.png)
+
+### Login Page
+
+![Login](./assets/login.png)
+
+### Outh Screen
+
+![Oauth](./assets/Oauth.png)
+
+### Dashboard
+
+![Dashboard](./assets/home.png)
+
+### MFA Setup
+
+![MFA Setup](./assets/mfa.png)
+
+### Session Management
+
+![Sessions](./assets/sessions.png)
+
 ## 🛠️ Tech Stack
 
 | Frontend | Backend |
@@ -134,28 +160,6 @@ cd client && npm run dev
 
 - Frontend: <http://localhost:3000>
 - Backend: <http://localhost:8000>
-
-## 📸 Screenshots
-
-### Login Page
-
-![Login](./assets/login.png)
-
-### Outh Screen
-
-![Oauth](./assets/Oauth.png)
-
-### Dashboard
-
-![Dashboard](./assets/home.png)
-
-### MFA Setup
-
-![MFA Setup](./assets/mfa.png)
-
-### Session Management
-
-![Sessions](./assets/sessions.png)
 
 ## 🌐 Live Demo
 
