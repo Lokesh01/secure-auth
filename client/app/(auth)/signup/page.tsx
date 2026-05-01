@@ -28,6 +28,7 @@ import PasswordStrength from '../../../components/auth/password-strength';
 const SignupPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { mutate, isPending } = useMutation({
     mutationFn: registerMutationFn,
     retry: false,
@@ -161,7 +162,9 @@ const SignupPage = () => {
                           </button>
                         </div>
                       </FormControl>
-                      <PasswordStrength password={password} />
+                      {password && password.length > 0 && (
+                        <PasswordStrength password={password} />
+                      )}
                       <FormMessage />
                     </FormItem>
                   )}
@@ -178,11 +181,30 @@ const SignupPage = () => {
                         Confirm Password
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="********"
-                          {...field}
-                          disabled={isPending}
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? 'text' : 'password'}
+                            placeholder="********"
+                            {...field}
+                            disabled={isPending}
+                            className="pr-10"
+                            autoComplete="off"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmPassword(prev => !prev)
+                            }
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                          >
+                            {showConfirmPassword ? (
+                              <Eye className="size-4" />
+                            ) : (
+                              <EyeOff className="size-4" />
+                            )}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
